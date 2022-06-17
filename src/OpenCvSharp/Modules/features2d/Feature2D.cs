@@ -99,10 +99,16 @@ namespace OpenCvSharp
                 using var keyPoints = new VectorOfKeyPoint();
                 NativeMethods.HandleException(
                     NativeMethods.features2d_Feature2D_detect_Mat1(ptr, image.CvPtr, keyPoints.CvPtr, Cv2.ToPtr(mask)));
+                
+                GC.KeepAlive(this);
+                GC.KeepAlive(image);
+                GC.KeepAlive(mask);
+                
                 return keyPoints.ToArray();
             }
             finally
             {
+                Console.WriteLine("Intra in dispose");
                 GC.KeepAlive(this);
                 GC.KeepAlive(image);
                 GC.KeepAlive(mask);
@@ -128,10 +134,16 @@ namespace OpenCvSharp
                 using var keypoints = new VectorOfKeyPoint();
                 NativeMethods.HandleException(
                     NativeMethods.features2d_Feature2D_detect_InputArray(ptr, image.CvPtr, keypoints.CvPtr, Cv2.ToPtr(mask)));
+                
+                GC.KeepAlive(this);
+                GC.KeepAlive(image);
+                GC.KeepAlive(mask);
+                
                 return keypoints.ToArray();
             }
             finally
             {
+                Console.WriteLine("Intra in dispose");
                 GC.KeepAlive(this);
                 GC.KeepAlive(image);
                 GC.KeepAlive(mask);
