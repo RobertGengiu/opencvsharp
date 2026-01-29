@@ -1,5 +1,19 @@
 cmake_minimum_required(VERSION 3.0)
 
+# --- Fix OpenCV + OpenEXR 3.x broken exported target ---
+if(NOT TARGET OpenEXR::OpenEXR)
+    find_package(OpenEXR QUIET)
+    if(TARGET OpenEXR::IlmImf)
+        add_library(OpenEXR::OpenEXR INTERFACE IMPORTED)
+        target_link_libraries(OpenEXR::OpenEXR
+            INTERFACE
+                OpenEXR::IlmImf
+                Imath::Imath
+        )
+    endif()
+endif()
+# ------------------------------------------------------------
+
 include_directories(${OpenCV_INCLUDE_DIR})
 IF(!EMSCRIPTEN)
 	link_directories(${OpenCV_LIBRARY_DIR} ${OpenCV_LIBRARIES})
