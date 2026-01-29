@@ -14,6 +14,19 @@ if(NOT TARGET OpenEXR::OpenEXR)
 endif()
 # ------------------------------------------------------------
 
+# --- Fix OpenCV + Eigen3 missing imported target ---
+if(NOT TARGET Eigen3::Eigen)
+    find_package(Eigen3 QUIET)
+    if(Eigen3_FOUND)
+        add_library(Eigen3::Eigen INTERFACE IMPORTED)
+        target_include_directories(Eigen3::Eigen
+            INTERFACE
+                ${EIGEN3_INCLUDE_DIRS}
+        )
+    endif()
+endif()
+# ---------------------------------------------------------
+
 include_directories(${OpenCV_INCLUDE_DIR})
 IF(!EMSCRIPTEN)
 	link_directories(${OpenCV_LIBRARY_DIR} ${OpenCV_LIBRARIES})
