@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net48;net6.0;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>OpenCvSharp</AssemblyName>
     <AssemblyOriginatorKeyFile>Key.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
-    <PackageId>OpenCvSharp</PackageId>
+    <PackageId>OpenCvSharp4</PackageId>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
@@ -21,9 +21,24 @@
     <RepositoryUrl>https://github.com/shimat/opencvsharp.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <AssemblyVersion>4.13.0.0</AssemblyVersion>
+    <FileVersion>4.13.0.0</FileVersion>
+    
+    <!-- NuGet Package Metadata -->
+    <Title>OpenCvSharp core library. A package of separate native bindings for your OS is required.</Title>
+    <Authors>shimat</Authors>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/shimat/opencvsharp</PackageProjectUrl>
+    <PackageIcon>opencvsharp.png</PackageIcon>
+    <Description>OpenCV wrapper for .NET. Since this package includes only core managed libraries, another package of native bindings for your OS is required (OpenCvSharp4.runtime.*).</Description>
+    <PackageTags>Image Processing OpenCV Wrapper FFI opencvsharp</PackageTags>
+    <Copyright>Copyright 2008-2026</Copyright>
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.managed.md</PackageReadmeFile>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net6.0'">
-    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <AnalysisMode>recommended</AnalysisMode>
   </PropertyGroup>
     
   <ItemGroup>
@@ -34,7 +49,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.103" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../nuget/icon/opencvsharp.png" Pack="true" PackagePath="" />
+    <None Include="../../nuget/README.managed.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,23 +63,11 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net48'">
-    <Reference Include="System.Security" />
-    <Reference Include="System.Web" />
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
-    <PackageReference Include="System.ValueTuple" Version="4.6.1" />
-  </ItemGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
-    <DefineConstants>$(DefineConstants);DOTNET_FRAMEWORK;</DefineConstants>
-  </PropertyGroup>
-
   <PropertyGroup Condition="$(TargetFramework.Contains('netstandard')) Or $(TargetFramework.Contains('netcoreapp')) ">
     <DefineConstants>TRACE;DOTNETCORE;WINRT</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$(TargetFramework.Contains('net6.0')) ">
+  <PropertyGroup Condition="$(TargetFramework.Contains('net8.0')) ">
     <DefineConstants>TRACE;DOTNETCORE;</DefineConstants>
   </PropertyGroup>
 
@@ -69,6 +77,11 @@
 
   <PropertyGroup>
     <NoWarn>1701;1702;CA1303;CA1707;CA1814;CA1401;CA1720;CA2213;</NoWarn>
+  </PropertyGroup>
+
+  <!-- CA1510, CA1512, CA1513 suppressed: Throw helper methods are not available in .NET Standard 2.x -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <NoWarn>$(NoWarn);CA1510;CA1512;CA1513</NoWarn>
   </PropertyGroup>
 
 </Project>

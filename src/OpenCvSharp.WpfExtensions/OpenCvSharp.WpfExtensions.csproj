@@ -3,27 +3,52 @@
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk.WindowsDesktop" Condition="'$(OS)' == 'Windows_NT'" />
 
   <PropertyGroup>
-    <TargetFrameworks>net48;net6.0-windows</TargetFrameworks>
+    <TargetFrameworks>net48;net8.0-windows</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RepositoryUrl>https://github.com/shimat/opencvsharp.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    
+    <!-- NuGet Package Metadata -->
+    <PackageId>OpenCvSharp4.WpfExtensions</PackageId>
+    <Title>OpenCvSharp WPF extension library.</Title>
+    <Authors>shimat</Authors>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/shimat/opencvsharp</PackageProjectUrl>
+    <PackageIcon>opencvsharp.png</PackageIcon>
+    <Description>OpenCvSharp WPF extension library.</Description>
+    <PackageTags>Image Processing OpenCV Wrapper FFI opencvsharp</PackageTags>
+    <Copyright>Copyright 2008-2026</Copyright>
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <AssemblyVersion>4.13.0.0</AssemblyVersion>
+    <FileVersion>4.13.0.0</FileVersion>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.managed.md</PackageReadmeFile>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net6.0-windows'">
-    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
+    <AnalysisMode>recommended</AnalysisMode>
     <NoWarn></NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
     <UseWPF>true</UseWPF>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="8.0.11" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\OpenCvSharp\OpenCvSharp.csproj" />
+    <ProjectReference Include="../OpenCvSharp/OpenCvSharp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../nuget/icon/opencvsharp.png" Pack="true" PackagePath="" />
+    <None Include="../../nuget/README.managed.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
@@ -47,9 +72,9 @@
   <PropertyGroup>
     <NoWarn>CA1303;</NoWarn>
   </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net48|AnyCPU'">
-    <DocumentationFile>C:\Projects\opencvsharp\src\OpenCvSharp.WpfExtensions\OpenCvSharp.WpfExtensions.xml</DocumentationFile>
+  <!-- CA1510, CA1512, CA1513 suppressed: Throw helper methods are not available in .NET Standard 2.x and .NET Framework 4.8 -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
+    <NoWarn>$(NoWarn);CA1510;CA1512;CA1513</NoWarn>
   </PropertyGroup>
   
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition="'$(OS)' != 'Windows_NT'" />

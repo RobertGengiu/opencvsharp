@@ -120,7 +120,7 @@ public class SelectiveSearchSegmentationStrategyColor : SelectiveSearchSegmentat
         return new SelectiveSearchSegmentationStrategyColor(p);
     }
 
-    internal class Ptr(IntPtr ptr) : OpenCvSharp.Ptr(ptr)
+    internal sealed class Ptr(IntPtr ptr) : OpenCvSharp.Ptr(ptr)
     {
         public override IntPtr Get()
         {
@@ -166,7 +166,7 @@ public class SelectiveSearchSegmentationStrategySize : SelectiveSearchSegmentati
         return new SelectiveSearchSegmentationStrategySize(p);
     }
 
-    internal class Ptr(IntPtr ptr) : OpenCvSharp.Ptr(ptr)
+    internal sealed class Ptr(IntPtr ptr) : OpenCvSharp.Ptr(ptr)
     {
         public override IntPtr Get()
         {
@@ -210,7 +210,7 @@ public class SelectiveSearchSegmentationStrategyTexture : SelectiveSearchSegment
         return new SelectiveSearchSegmentationStrategyTexture(p);
     }
 
-    internal class Ptr(IntPtr ptr) : OpenCvSharp.Ptr(ptr)
+    internal sealed class Ptr(IntPtr ptr) : OpenCvSharp.Ptr(ptr)
     {
         public override IntPtr Get()
         {
@@ -254,7 +254,7 @@ public class SelectiveSearchSegmentationStrategyFill : SelectiveSearchSegmentati
         return new SelectiveSearchSegmentationStrategyFill(p);
     }
 
-    internal class Ptr(IntPtr ptr) : OpenCvSharp.Ptr(ptr)
+    internal sealed class Ptr(IntPtr ptr) : OpenCvSharp.Ptr(ptr)
     {
         public override IntPtr Get()
         {

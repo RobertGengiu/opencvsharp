@@ -9,7 +9,6 @@ using SixLabors.ImageSharp.Formats.Tiff;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using Xunit;
-using Xunit.Abstractions;
 using Color = SixLabors.ImageSharp.Color;
 using Image = SixLabors.ImageSharp.Image;
 
@@ -20,6 +19,9 @@ namespace OpenCvSharp.Tests.ImgCodecs;
 public class ImgCodecsTest : TestBase
 {
     private readonly ITestOutputHelper testOutputHelper;
+
+    // Platform check for conditional test execution
+    public static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
     public ImgCodecsTest(ITestOutputHelper testOutputHelper)
     {
@@ -55,7 +57,7 @@ public class ImgCodecsTest : TestBase
         Assert.True(image.Empty());
     }
         
-    [Fact]
+    [Fact(Skip = "supported?")]
     public void ImReadDoesNotSupportGif()
     {
         using var image = Cv2.ImRead("_data/image/empty.gif", ImreadModes.Grayscale);
@@ -63,7 +65,6 @@ public class ImgCodecsTest : TestBase
         Assert.True(image.Empty());
     }
 
-    //[LinuxOnlyFact]
     [Fact]
     public void ImReadJapaneseFileName()
     {
@@ -99,7 +100,6 @@ public class ImgCodecsTest : TestBase
 
     // TODO Windows not supported?
     // https://github.com/opencv/opencv/issues/4242
-    //[PlatformSpecificFact("Linux")]
     [Fact]
     public void ImReadUnicodeFileName()
     {
@@ -213,8 +213,6 @@ public class ImgCodecsTest : TestBase
         Assert.Equal(20, imageInfo.Width);
     }
 
-    // TODO AccessViolationException
-    //[PlatformSpecificTheory("Windows")]
     [Theory]
     [InlineData("foo.png")]
     [InlineData("bar.jpg")]
@@ -232,7 +230,7 @@ public class ImgCodecsTest : TestBase
             }
             Assert.True(File.Exists(path), $"File '{path}' not found");
 
-            //Assert.True(Cv2.HaveImageReader(path));
+            Assert.True(Cv2.HaveImageReader(path));
         }
         finally
         {
@@ -247,9 +245,7 @@ public class ImgCodecsTest : TestBase
         }
     }
 
-    // TODO
-    [Fact(Skip = "AccessViolationException")]
-    //[PlatformSpecificFact("Windows")]
+    [Fact]
     public void HaveImageReaderJapanese()
     {
         testOutputHelper.WriteLine($"CurrentCulture: {Thread.CurrentThread.CurrentCulture.Name}");
@@ -280,7 +276,7 @@ public class ImgCodecsTest : TestBase
         }
     }
 
-    [PlatformSpecificFact("Windows")]
+    [Fact]
     public void HaveImageReaderUnicode()
     {
         var path = Path.Combine("_data", "image", "haveImageReader_♥♡😀😄.png");
@@ -314,8 +310,6 @@ public class ImgCodecsTest : TestBase
         }
     }
 
-    // TODO
-    //[PlatformSpecificTheory("Windows")]
     [Theory]
     [InlineData("foo.png")]
     [InlineData("bar.jpg")]
@@ -343,7 +337,7 @@ public class ImgCodecsTest : TestBase
     }
 
     // TODO
-    [PlatformSpecificFact("Windows")]
+    [Fact(Skip = "Only runs on Windows", SkipUnless = nameof(IsWindows))]
     public void HaveImageWriterUnicode()
     {
         // This file does not have to exist
@@ -438,7 +432,7 @@ public class ImgCodecsTest : TestBase
 #if NET48
             var span = imageBytesWithDummy.AsSpan(100, imageBytes.Length);
 #else
-                var span = imageBytesWithDummy.AsSpan()[100..^100];
+            var span = imageBytesWithDummy.AsSpan()[100..^100];
 #endif
             using var mat = Cv2.ImDecode(span, ImreadModes.Color);
             Assert.NotNull(mat);

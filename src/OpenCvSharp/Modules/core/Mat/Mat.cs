@@ -299,7 +299,9 @@ public partial class Mat : DisposableCvObject
     }
 
     /// <summary>
-    /// constructor for matrix headers pointing to user-allocated data
+    /// Constructor for matrix headers pointing to user-allocated data.
+    /// **Do not use this constructor directly.** Please use <see cref="Mat.FromPixelData"/> instead.
+    /// This constructor was removed from the public API because the introduction of <c>nint</c> in .NET caused overload resolution confusion.
     /// </summary>
     /// <param name="rows">Number of rows in a 2D array.</param>
     /// <param name="cols">Number of columns in a 2D array.</param>
@@ -320,7 +322,7 @@ public partial class Mat : DisposableCvObject
     }
 
     /// <summary>
-    /// constructor for matrix headers pointing to user-allocated data
+    /// Constructor for matrix headers pointing to user-allocated data.
     /// </summary>
     /// <param name="rows">Number of rows in a 2D array.</param>
     /// <param name="cols">Number of columns in a 2D array.</param>
@@ -3402,7 +3404,7 @@ public partial class Mat : DisposableCvObject
         
     #region Get/SetArray
 
-    private static readonly IReadOnlyDictionary<Type, int> dataDimensionMap = new Dictionary<Type, int>
+    private static readonly Dictionary<Type, int> dataDimensionMap = new()
     {
         {typeof(byte), 1},
         {typeof(sbyte), 1},
@@ -3450,7 +3452,7 @@ public partial class Mat : DisposableCvObject
         {typeof(Vec6d), 6},
     };
         
-    private static readonly IReadOnlyDictionary<Type, MatType[]> acceptableTypesMap = new Dictionary<Type, MatType[]>
+    private static readonly Dictionary<Type, MatType[]> acceptableTypesMap = new()
     {
         {typeof(byte), [MatType.CV_8SC1, MatType.CV_8UC1] },
         {typeof(sbyte), [MatType.CV_8SC1, MatType.CV_8UC1] },
