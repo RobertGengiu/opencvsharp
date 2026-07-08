@@ -1,5 +1,30 @@
 ﻿cmake_minimum_required(VERSION 3.15)
 
+# --- Fix OpenCV + OpenEXR 3.x broken exported target ---
+if(NOT TARGET OpenEXR::OpenEXR)
+    find_package(OpenEXR QUIET)
+    if(TARGET OpenEXR::IlmImf)
+        add_library(OpenEXR::OpenEXR INTERFACE IMPORTED)
+        target_link_libraries(OpenEXR::OpenEXR
+            INTERFACE
+                OpenEXR::IlmImf
+                Imath::Imath
+        )
+    endif()
+endif()
+# ------------------------------------------------------------
+
+# --- Fix OpenCV + Eigen3 missing imported target ---
+find_package(Eigen3 QUIET)
+if(NOT TARGET Eigen3::Eigen AND Eigen3_FOUND)
+    add_library(Eigen3::Eigen INTERFACE IMPORTED)
+    target_include_directories(Eigen3::Eigen
+        INTERFACE
+            ${EIGEN3_INCLUDE_DIRS}
+    )
+endif()
+# ---------------------------------------------------------
+
 include_directories(${OpenCV_INCLUDE_DIR})
 IF(!EMSCRIPTEN)
 	link_directories(${OpenCV_LIBRARY_DIR} ${OpenCV_LIBRARIES})
