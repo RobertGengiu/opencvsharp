@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using OpenCvSharp.Internal;
 
@@ -67,9 +67,6 @@ public class Moments
     /// <returns></returns>
     public Moments(InputArray array, bool binaryImage = false)
     {
-        if (array is null)
-            throw new ArgumentNullException(nameof(array));
-        array.ThrowIfDisposed();
         InitializeFromInputArray(array, binaryImage);
     }
 
@@ -82,8 +79,7 @@ public class Moments
     /// <returns></returns>
     public Moments(byte[,] array, bool binaryImage = false)
     {
-        if (array is null)
-            throw new ArgumentNullException(nameof(array));
+        ArgumentNullException.ThrowIfNull(array);
         var rows = array.GetLength(0);
         var cols = array.GetLength(1);
         using var arrayMat = Mat.FromPixelData(rows, cols, MatType.CV_8UC1, array);
@@ -99,8 +95,7 @@ public class Moments
     /// <returns></returns>
     public Moments(float[,] array, bool binaryImage = false)
     {
-        if (array is null)
-            throw new ArgumentNullException(nameof(array));
+        ArgumentNullException.ThrowIfNull(array);
         var rows = array.GetLength(0);
         var cols = array.GetLength(1);
         using var arrayMat = Mat.FromPixelData(rows, cols, MatType.CV_32FC1, array);
@@ -116,8 +111,7 @@ public class Moments
     /// <returns></returns>
     public Moments(IEnumerable<Point> array, bool binaryImage = false)
     {
-        if (array is null)
-            throw new ArgumentNullException(nameof(array));
+        ArgumentNullException.ThrowIfNull(array);
         var points = array.ToArray();
         using var pointsMat = Mat.FromPixelData(points.Length, 1, MatType.CV_32SC2, points);
         InitializeFromInputArray(pointsMat, binaryImage);
@@ -132,8 +126,7 @@ public class Moments
     /// <returns></returns>
     public Moments(IEnumerable<Point2f> array, bool binaryImage = false)
     {
-        if (array is null)
-            throw new ArgumentNullException(nameof(array));
+        ArgumentNullException.ThrowIfNull(array);
         var points = array.ToArray();
         using var pointsMat = Mat.FromPixelData(points.Length, 1, MatType.CV_32FC2, points);
         InitializeFromInputArray(pointsMat, binaryImage);
@@ -150,8 +143,8 @@ public class Moments
     private void InitializeFromInputArray(InputArray array, bool binaryImage)
     {
         NativeMethods.HandleException(
-            NativeMethods.imgproc_moments(array.CvPtr, binaryImage ? 1 : 0, out var m));
-        GC.KeepAlive(array);
+            NativeMethods.geometry_moments(array.Proxy, binaryImage ? 1 : 0, out var m));
+        GC.KeepAlive(array.Source);
         Initialize(m.m00, m.m10, m.m01, m.m20, m.m11, m.m02, m.m30, m.m21, m.m12, m.m03);
     }
 

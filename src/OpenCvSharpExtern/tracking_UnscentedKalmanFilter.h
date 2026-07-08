@@ -12,27 +12,27 @@
 CVAPI(ExceptionStatus) tracking_createUnscentedKalmanFilter(
     cv::Ptr<cv::tracking::UnscentedKalmanFilter> **returnValue)
 {
-    BEGIN_WRAP
-    const auto p = cv::tracking::createUnscentedKalmanFilter();
-    *returnValue = clone(p);
-    END_WRAP
+    return cvTry([&] {
+        const auto p = cv::tracking::createUnscentedKalmanFilter();
+        *returnValue = clone(p);
+    });
 }
 
 CVAPI(ExceptionStatus) tracking_Ptr_UnscentedKalmanFilter_delete(
     cv::Ptr<cv::tracking::UnscentedKalmanFilter> *ptr)
 {
-    BEGIN_WRAP
-    delete ptr;
-    END_WRAP
+    return cvTry([&] {
+        delete ptr;
+    });
 }
 
 CVAPI(ExceptionStatus) tracking_Ptr_UnscentedKalmanFilter_get(
     cv::Ptr<cv::tracking::UnscentedKalmanFilter> *ptr, 
     cv::tracking::UnscentedKalmanFilter **returnValue)
 {
-    BEGIN_WRAP
-    *returnValue = ptr->get();
-    END_WRAP
+    return cvTry([&] {
+        *returnValue = ptr->get();
+    });
 }
 
 #endif

@@ -1,4 +1,4 @@
-﻿using OpenCvSharp.Internal;
+using OpenCvSharp.Internal;
 using OpenCvSharp.Internal.Vectors;
 
 // ReSharper disable InconsistentNaming
@@ -1432,15 +1432,13 @@ public class HOGDescriptor : CvObject
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_winSize_get(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_winSize_get(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_winSize_set(CvPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_winSize_set(Handle, value));
         }
     }
 
@@ -1452,15 +1450,13 @@ public class HOGDescriptor : CvObject
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_blockSize_get(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_blockSize_get(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_blockSize_set(CvPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_blockSize_set(Handle, value));
         }
     }
 
@@ -1472,15 +1468,13 @@ public class HOGDescriptor : CvObject
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_blockStride_get(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_blockStride_get(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_blockStride_set(CvPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_blockStride_set(Handle, value));
         }
     }
 
@@ -1492,15 +1486,13 @@ public class HOGDescriptor : CvObject
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_cellSize_get(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_cellSize_get(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_cellSize_set(CvPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_cellSize_set(Handle, value));
         }
     }
 
@@ -1512,15 +1504,13 @@ public class HOGDescriptor : CvObject
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_nbins_get(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_nbins_get(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_nbins_set(CvPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_nbins_set(Handle, value));
         }
     }
 
@@ -1532,15 +1522,13 @@ public class HOGDescriptor : CvObject
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_derivAperture_get(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_derivAperture_get(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_derivAperture_set(CvPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_derivAperture_set(Handle, value));
         }
     }
 
@@ -1553,15 +1541,13 @@ public class HOGDescriptor : CvObject
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_winSigma_get(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_winSigma_get(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_winSigma_set(CvPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_winSigma_set(Handle, value));
         }
     }
 #pragma warning restore CA1721
@@ -1574,15 +1560,13 @@ public class HOGDescriptor : CvObject
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_histogramNormType_get(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_histogramNormType_get(Handle, out var ret));
             return (HistogramNormType)ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_histogramNormType_set(CvPtr, (int)value));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_histogramNormType_set(Handle, (int)value));
         }
     }
 
@@ -1594,15 +1578,13 @@ public class HOGDescriptor : CvObject
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_L2HysThreshold_get(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_L2HysThreshold_get(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_L2HysThreshold_set(CvPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_L2HysThreshold_set(Handle, value));
         }
     }
 
@@ -1614,15 +1596,13 @@ public class HOGDescriptor : CvObject
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_gammaCorrection_get(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_gammaCorrection_get(Handle, out var ret));
             return ret != 0;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_gammaCorrection_set(CvPtr, value ? 1 : 0));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_gammaCorrection_set(Handle, value ? 1 : 0));
         }
     }
 
@@ -1634,15 +1614,13 @@ public class HOGDescriptor : CvObject
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_nlevels_get(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_nlevels_get(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_nlevels_set(CvPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_nlevels_set(Handle, value));
         }
     }
 
@@ -1654,15 +1632,13 @@ public class HOGDescriptor : CvObject
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_signedGradient_get(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_signedGradient_get(Handle, out var ret));
             return ret != 0;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.objdetect_HOGDescriptor_signedGradient_set(CvPtr, value ? 1 : 0));
-            GC.KeepAlive(this);
+                NativeMethods.objdetect_HOGDescriptor_signedGradient_set(Handle, value ? 1 : 0));
         }
     }
 
@@ -1697,10 +1673,9 @@ public class HOGDescriptor : CvObject
     {
         ThrowIfDisposed();
 
-        using var svmDetectorVec = new VectorOfFloat(svmDetector);
+        using var svmDetectorVec = new StdVector<float>(svmDetector);
         NativeMethods.HandleException(
-            NativeMethods.objdetect_HOGDescriptor_setSVMDetector(CvPtr, svmDetectorVec.CvPtr));
-        GC.KeepAlive(this);
+            NativeMethods.objdetect_HOGDescriptor_setSVMDetector(Handle, svmDetectorVec.CvPtr));
     }
 
     /// <summary>
@@ -1713,8 +1688,7 @@ public class HOGDescriptor : CvObject
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.objdetect_HOGDescriptor_load(CvPtr, fileName, objName, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.objdetect_HOGDescriptor_load(Handle, fileName, objName, out var ret));
         return ret != 0;
     }
 
@@ -1727,8 +1701,7 @@ public class HOGDescriptor : CvObject
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.objdetect_HOGDescriptor_save(CvPtr, fileName, objName));
-        GC.KeepAlive(this);
+            NativeMethods.objdetect_HOGDescriptor_save(Handle, fileName, objName));
     }
 
     /// <summary>
@@ -1739,8 +1712,7 @@ public class HOGDescriptor : CvObject
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.objdetect_HOGDescriptor_getDescriptorSize(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.objdetect_HOGDescriptor_getDescriptorSize(Handle, out var ret));
         return ret.ToInt32();
     }
 
@@ -1752,8 +1724,7 @@ public class HOGDescriptor : CvObject
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.objdetect_HOGDescriptor_checkDetectorSize(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.objdetect_HOGDescriptor_checkDetectorSize(Handle, out var ret));
         return ret != 0;
     }
 
@@ -1765,8 +1736,7 @@ public class HOGDescriptor : CvObject
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.objdetect_HOGDescriptor_getWinSigma(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.objdetect_HOGDescriptor_getWinSigma(Handle, out var ret));
         return ret;
     }
 
@@ -1781,18 +1751,16 @@ public class HOGDescriptor : CvObject
     public virtual float[] Compute(Mat img, Size? winStride = null, Size? padding = null, Point[]? locations = null)
     {
         ThrowIfDisposed();
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
+        ArgumentNullException.ThrowIfNull(img);
 
         var winStride0 = winStride.GetValueOrDefault(new Size());
         var padding0 = padding.GetValueOrDefault(new Size());
-        using var flVec = new VectorOfFloat();
+        using var flVec = new StdVector<float>();
         var length = locations?.Length ?? 0;
 
         NativeMethods.HandleException(
-            NativeMethods.objdetect_HOGDescriptor_compute(CvPtr, img.CvPtr, flVec.CvPtr, winStride0, padding0, locations, length));
+            NativeMethods.objdetect_HOGDescriptor_compute(Handle, img.CvPtr, flVec.CvPtr, winStride0, padding0, locations, length));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(img);
         return flVec.ToArray();
     }
@@ -1812,21 +1780,19 @@ public class HOGDescriptor : CvObject
         double hitThreshold = 0, Size? winStride = null, Size? padding = null, Point[]? searchLocations = null)
     {
         ThrowIfDisposed();
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
+        ArgumentNullException.ThrowIfNull(img);
         img.ThrowIfDisposed();
 
         var winStride0 = winStride.GetValueOrDefault(new Size());
         var padding0 = padding.GetValueOrDefault(new Size());
-        using var flVec = new VectorOfPoint();
+        using var flVec = new StdVector<Point>();
         var slLength = searchLocations?.Length ?? 0;
 
         NativeMethods.HandleException(
             NativeMethods.objdetect_HOGDescriptor_detect1(
-                CvPtr, img.CvPtr, flVec.CvPtr,
+                Handle, img.CvPtr, flVec.CvPtr,
                 hitThreshold, winStride0, padding0, searchLocations, slLength));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(img);
         return flVec.ToArray();
     }
@@ -1847,22 +1813,20 @@ public class HOGDescriptor : CvObject
         double hitThreshold = 0, Size? winStride = null, Size? padding = null, Point[]? searchLocations = null)
     {
         ThrowIfDisposed();
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
+        ArgumentNullException.ThrowIfNull(img);
         img.ThrowIfDisposed();
 
         var winStride0 = winStride.GetValueOrDefault(new Size());
         var padding0 = padding.GetValueOrDefault(new Size());
-        using var flVec = new VectorOfPoint();
-        using var weightsVec = new VectorOfDouble();
+        using var flVec = new StdVector<Point>();
+        using var weightsVec = new StdVector<double>();
         var slLength = searchLocations?.Length ?? 0;
 
         NativeMethods.HandleException(
             NativeMethods.objdetect_HOGDescriptor_detect2(
-                CvPtr, img.CvPtr, flVec.CvPtr, weightsVec.CvPtr,
+                Handle, img.CvPtr, flVec.CvPtr, weightsVec.CvPtr,
                 hitThreshold, winStride0, padding0, searchLocations, slLength));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(img);
         weights = weightsVec.ToArray();
         return flVec.ToArray();
@@ -1884,20 +1848,18 @@ public class HOGDescriptor : CvObject
         double hitThreshold = 0, Size? winStride = null, Size? padding = null, double scale=1.05, int groupThreshold = 2)
     {
         ThrowIfDisposed();
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
+        ArgumentNullException.ThrowIfNull(img);
         img.ThrowIfDisposed();
 
         var winStride0 = winStride.GetValueOrDefault(new Size());
         var padding0 = padding.GetValueOrDefault(new Size());
-        using var flVec = new VectorOfRect();
+        using var flVec = new StdVector<Rect>();
 
         NativeMethods.HandleException(
             NativeMethods.objdetect_HOGDescriptor_detectMultiScale1(
-                CvPtr, img.CvPtr, flVec.CvPtr,
+                Handle, img.CvPtr, flVec.CvPtr,
                 hitThreshold, winStride0, padding0, scale, groupThreshold));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(img);
         return flVec.ToArray();
     }
@@ -1918,21 +1880,19 @@ public class HOGDescriptor : CvObject
         double hitThreshold = 0, Size? winStride = null, Size? padding = null, double scale = 1.05, int groupThreshold = 2)
     {
         ThrowIfDisposed();
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
+        ArgumentNullException.ThrowIfNull(img);
         img.ThrowIfDisposed();
 
         var winStride0 = winStride.GetValueOrDefault(new Size());
         var padding0 = padding.GetValueOrDefault(new Size());
-        using var flVec = new VectorOfRect();
-        using var foundWeightsVec = new VectorOfDouble();
+        using var flVec = new StdVector<Rect>();
+        using var foundWeightsVec = new StdVector<double>();
 
         NativeMethods.HandleException(
             NativeMethods.objdetect_HOGDescriptor_detectMultiScale2(
-                CvPtr, img.CvPtr, flVec.CvPtr, foundWeightsVec.CvPtr,
+                Handle, img.CvPtr, flVec.CvPtr, foundWeightsVec.CvPtr,
                 hitThreshold, winStride0, padding0, scale, groupThreshold));
 
-        GC.KeepAlive(this);
         foundWeights = foundWeightsVec.ToArray();
         GC.KeepAlive(img);
         return flVec.ToArray();
@@ -1949,12 +1909,9 @@ public class HOGDescriptor : CvObject
     public virtual void ComputeGradient(Mat img, Mat grad, Mat angleOfs, Size? paddingTL = null, Size? paddingBR = null)
     {
         ThrowIfDisposed();
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
-        if (grad is null)
-            throw new ArgumentNullException(nameof(grad));
-        if (angleOfs is null)
-            throw new ArgumentNullException(nameof(angleOfs));
+        ArgumentNullException.ThrowIfNull(img);
+        ArgumentNullException.ThrowIfNull(grad);
+        ArgumentNullException.ThrowIfNull(angleOfs);
         img.ThrowIfDisposed();
         grad.ThrowIfDisposed();
         angleOfs.ThrowIfDisposed();
@@ -1963,9 +1920,8 @@ public class HOGDescriptor : CvObject
         var paddingBR0 = paddingBR.GetValueOrDefault(new Size());
         NativeMethods.HandleException(
             NativeMethods.objdetect_HOGDescriptor_computeGradient(
-                CvPtr, img.CvPtr, grad.CvPtr, angleOfs.CvPtr, paddingTL0, paddingBR0));
+                Handle, img.CvPtr, grad.CvPtr, angleOfs.CvPtr, paddingTL0, paddingBR0));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(img);
         GC.KeepAlive(grad);
         GC.KeepAlive(angleOfs);
@@ -1988,23 +1944,20 @@ public class HOGDescriptor : CvObject
         double hitThreshold = 0, Size? winStride = null, Size? padding = null)
     {
         ThrowIfDisposed();
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
-        if (locations is null)
-            throw new ArgumentNullException(nameof(locations));
+        ArgumentNullException.ThrowIfNull(img);
+        ArgumentNullException.ThrowIfNull(locations);
         img.ThrowIfDisposed();
 
         var winStride0 = winStride.GetValueOrDefault(new Size());
         var padding0 = padding.GetValueOrDefault(new Size());
-        using var flVec = new VectorOfPoint();
-        using var cVec = new VectorOfDouble();
+        using var flVec = new StdVector<Point>();
+        using var cVec = new StdVector<double>();
 
         NativeMethods.HandleException(
             NativeMethods.objdetect_HOGDescriptor_detectROI(
-                CvPtr, img.CvPtr, locations, locations.Length,
+                Handle, img.CvPtr, locations, locations.Length,
                 flVec.CvPtr, cVec.CvPtr, hitThreshold, winStride0, padding0));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(img);
         foundLocations = flVec.ToArray();
         confidences = cVec.ToArray();
@@ -2027,22 +1980,20 @@ public class HOGDescriptor : CvObject
         int groupThreshold = 0)
     {
         ThrowIfDisposed();
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
+        ArgumentNullException.ThrowIfNull(img);
         img.ThrowIfDisposed();
 
-        using var flVec = new VectorOfRect();
-        using var scalesVec = new VectorOfDouble();
+        using var flVec = new StdVector<Rect>();
+        using var scalesVec = new StdVector<double>();
         using var locationsVec = new VectorOfVectorPoint();
         using var confidencesVec = new VectorOfVectorDouble();
 
         NativeMethods.HandleException(
             NativeMethods.objdetect_HOGDescriptor_detectMultiScaleROI(
-                CvPtr, img.CvPtr, flVec.CvPtr,
+                Handle, img.CvPtr, flVec.CvPtr,
                 scalesVec.CvPtr, locationsVec.CvPtr, confidencesVec.CvPtr,
                 hitThreshold, groupThreshold));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(img);
         foundLocations = flVec.ToArray();
 
@@ -2073,13 +2024,12 @@ public class HOGDescriptor : CvObject
     {
         ThrowIfDisposed();
 
-        using var rectListVec = new VectorOfRect();
-        using var weightsVec = new VectorOfDouble();
+        using var rectListVec = new StdVector<Rect>();
+        using var weightsVec = new StdVector<double>();
         NativeMethods.HandleException(
             NativeMethods.objdetect_HOGDescriptor_groupRectangles(
-                CvPtr, rectListVec.CvPtr, weightsVec.CvPtr, groupThreshold, eps));
+                Handle, rectListVec.CvPtr, weightsVec.CvPtr, groupThreshold, eps));
 
-        GC.KeepAlive(this);
         rectList = rectListVec.ToArray();
         weights = weightsVec.ToArray();
     }

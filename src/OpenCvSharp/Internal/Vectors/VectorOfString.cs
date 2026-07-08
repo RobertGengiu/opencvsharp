@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 
 namespace OpenCvSharp.Internal.Vectors;
 
@@ -19,11 +19,10 @@ public class VectorOfString : CvObject, IStdVector<string?>
     /// Constructor
     /// </summary>
     /// <param name="size"></param>
-    public VectorOfString(nuint size)
+    public VectorOfString(int size)
     {
-        if (size < 0)
-            throw new ArgumentOutOfRangeException(nameof(size));
-        var p = NativeMethods.vector_string_new2(size);
+        ArgumentOutOfRangeException.ThrowIfNegative(size);
+        var p = NativeMethods.vector_string_new2((nuint)size);
         SetSafeHandle(new OpenCvPtrSafeHandle(p, ownsHandle: false, releaseAction: null));
     }
 
@@ -43,8 +42,7 @@ public class VectorOfString : CvObject, IStdVector<string?>
     {
         get
         {
-            var res = NativeMethods.vector_string_getSize(CvPtr);
-            GC.KeepAlive(this);
+            var res = NativeMethods.vector_string_getSize(Handle);
             return (int)res;
         }
     }
@@ -63,7 +61,7 @@ public class VectorOfString : CvObject, IStdVector<string?>
         var cStringPointers = new IntPtr[size];
         var stringLengths = new int[size];
 
-        NativeMethods.vector_string_getElements(CvPtr, cStringPointers, stringLengths);
+        NativeMethods.vector_string_getElements(Handle, cStringPointers, stringLengths);
 
         for (var i = 0; i < size; i++)
         {
@@ -75,6 +73,7 @@ public class VectorOfString : CvObject, IStdVector<string?>
 
         GC.KeepAlive(cStringPointers);
         GC.KeepAlive(stringLengths);
+        // cStringPointers alias native memory held by this vector and were just dereferenced above.
         GC.KeepAlive(this);
         return ret;
     }

@@ -1,4 +1,4 @@
-﻿namespace OpenCvSharp.Detail;
+namespace OpenCvSharp.Detail;
 
 /// <summary>
 /// Structure containing information about matches between two images.
@@ -77,8 +77,7 @@ public sealed class MatchesInfo : IDisposable
     /// <param name="other"></param>
     public MatchesInfo(MatchesInfo other)
     {
-        if (other is null)
-            throw new ArgumentNullException(nameof(other));
+        ArgumentNullException.ThrowIfNull(other);
         SrcImgIdx = other.SrcImgIdx;
         DstImgIdx = other.DstImgIdx;
         Matches = other.Matches;

@@ -1,4 +1,4 @@
-﻿namespace OpenCvSharp;
+namespace OpenCvSharp;
 
 /// <summary>
 /// A 3-dimensional line object
@@ -60,8 +60,7 @@ public class Line3D
     /// <param name="line">The returned value from cvFitLine</param>param>
     public Line3D(float[] line)
     {
-        if (line is null)
-            throw new ArgumentNullException(nameof(line));
+        ArgumentNullException.ThrowIfNull(line);
         if (line.Length != 6)
             throw new ArgumentException("array.Length != 6", nameof(line));
 

@@ -42,8 +42,7 @@ public class Dictionary : CvObject
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.aruco_Dictionary_getBytesList(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.aruco_Dictionary_getBytesList(Handle, out var ret));
             return new Mat(ret);
         }
     }
@@ -57,16 +56,14 @@ public class Dictionary : CvObject
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.aruco_Dictionary_getMarkerSize(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.aruco_Dictionary_getMarkerSize(Handle, out var ret));
             return ret;
         }
         set
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.aruco_Dictionary_setMarkerSize(CvPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.aruco_Dictionary_setMarkerSize(Handle, value));
         }
     }
 
@@ -79,16 +76,14 @@ public class Dictionary : CvObject
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.aruco_Dictionary_getMaxCorrectionBits(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.aruco_Dictionary_getMaxCorrectionBits(Handle, out var ret));
             return ret;
         }
         set
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.aruco_Dictionary_setMaxCorrectionBits(CvPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.aruco_Dictionary_setMaxCorrectionBits(Handle, value));
         }
     }
     
@@ -103,15 +98,13 @@ public class Dictionary : CvObject
     /// <returns></returns>
     public bool Identify(Mat onlyBits, out int idx, out int rotation, double maxCorrectionRate)
     {
-        if (onlyBits is null)
-            throw new ArgumentNullException(nameof(onlyBits));
+        ArgumentNullException.ThrowIfNull(onlyBits);
         onlyBits.ThrowIfDisposed();
         ThrowIfDisposed();
 
         NativeMethods.HandleException(
-            NativeMethods.aruco_Dictionary_identify(CvPtr, onlyBits.CvPtr, out idx, out rotation, maxCorrectionRate, out var ret));
+            NativeMethods.aruco_Dictionary_identify(Handle, onlyBits.CvPtr, out idx, out rotation, maxCorrectionRate, out var ret));
         
-        GC.KeepAlive(this);
         return ret != 0;
     }
     
@@ -125,15 +118,11 @@ public class Dictionary : CvObject
     /// <returns></returns>
     public int GetDistanceToId(InputArray bits, int id, bool allRotations = true)
     {
-        if (bits is null)
-            throw new ArgumentNullException(nameof(bits));
-        bits.ThrowIfDisposed();
         ThrowIfDisposed();
 
         NativeMethods.HandleException(
-            NativeMethods.aruco_Dictionary_getDistanceToId(CvPtr, bits.CvPtr, id, allRotations ? 1 : 0, out var ret));
+            NativeMethods.aruco_Dictionary_getDistanceToId(Handle, bits.Proxy, id, allRotations ? 1 : 0, out var ret));
         
-        GC.KeepAlive(this);
         return ret;
     }
     
@@ -146,15 +135,11 @@ public class Dictionary : CvObject
     /// <param name="borderBits"></param>
     public void GenerateImageMarker(int id, int sidePixels, OutputArray img, int borderBits = 1)
     {
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
-        img.ThrowIfNotReady();
         ThrowIfDisposed();
         
         NativeMethods.HandleException(
-            NativeMethods.aruco_Dictionary_generateImageMarker(CvPtr, id, sidePixels, img.CvPtr, borderBits));
+            NativeMethods.aruco_Dictionary_generateImageMarker(Handle, id, sidePixels, img.Proxy, borderBits));
         
-        GC.KeepAlive(this);
     }
     
     /// <summary>
@@ -164,8 +149,7 @@ public class Dictionary : CvObject
     /// <returns></returns>
     public static Mat GetByteListFromBits(Mat bits)
     {
-        if (bits is null)
-            throw new ArgumentNullException(nameof(bits));
+        ArgumentNullException.ThrowIfNull(bits);
         bits.ThrowIfDisposed();
 
         var ret = new Mat();
@@ -182,8 +166,7 @@ public class Dictionary : CvObject
     /// <returns></returns>
     public static Mat GetBitsFromByteList(Mat byteList, int markerSize)
     {
-        if (byteList is null)
-            throw new ArgumentNullException(nameof(byteList));
+        ArgumentNullException.ThrowIfNull(byteList);
         byteList.ThrowIfDisposed();
         
         var ret = new Mat();

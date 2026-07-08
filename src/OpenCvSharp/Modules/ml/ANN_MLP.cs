@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using OpenCvSharp.Internal;
 
 namespace OpenCvSharp.ML;
@@ -39,8 +39,7 @@ public class ANN_MLP : StatModel
     /// <returns></returns>
     public static ANN_MLP Load(string filePath)
     {
-        if (filePath is null)
-            throw new ArgumentNullException(nameof(filePath));
+        ArgumentNullException.ThrowIfNull(filePath);
         NativeMethods.HandleException(
             NativeMethods.ml_ANN_MLP_load(filePath, out var smartPtr));
         NativeMethods.HandleException(NativeMethods.ml_Ptr_ANN_MLP_get(smartPtr, out var rawPtr));
@@ -54,8 +53,7 @@ public class ANN_MLP : StatModel
     /// <returns></returns>
     public static ANN_MLP LoadFromString(string strModel)
     {
-        if (strModel is null)
-            throw new ArgumentNullException(nameof(strModel));
+        ArgumentNullException.ThrowIfNull(strModel);
         NativeMethods.HandleException(
             NativeMethods.ml_ANN_MLP_loadFromString(strModel, out var smartPtr));
         NativeMethods.HandleException(NativeMethods.ml_Ptr_ANN_MLP_get(smartPtr, out var rawPtr));
@@ -74,15 +72,13 @@ public class ANN_MLP : StatModel
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_getTermCriteria(RawPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_getTermCriteria(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_setTermCriteria(RawPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_setTermCriteria(Handle, value));
         }
     }
 
@@ -96,15 +92,13 @@ public class ANN_MLP : StatModel
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_getBackpropWeightScale(RawPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_getBackpropWeightScale(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_setBackpropWeightScale(RawPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_setBackpropWeightScale(Handle, value));
         }
     }
 
@@ -120,15 +114,13 @@ public class ANN_MLP : StatModel
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_getBackpropMomentumScale(RawPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_getBackpropMomentumScale(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_setBackpropMomentumScale(RawPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_setBackpropMomentumScale(Handle, value));
         }
     }
 
@@ -142,15 +134,13 @@ public class ANN_MLP : StatModel
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_getRpropDW0(RawPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_getRpropDW0(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_setRpropDW0(RawPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_setRpropDW0(Handle, value));
         }
     }
 
@@ -165,15 +155,13 @@ public class ANN_MLP : StatModel
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_getRpropDWPlus(RawPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_getRpropDWPlus(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_setRpropDWPlus(RawPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_setRpropDWPlus(Handle, value));
         }
     }
 
@@ -188,15 +176,13 @@ public class ANN_MLP : StatModel
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_getRpropDWPlus(RawPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_getRpropDWPlus(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_setRpropDWPlus(RawPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_setRpropDWPlus(Handle, value));
         }
     }
 
@@ -211,15 +197,13 @@ public class ANN_MLP : StatModel
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_getRpropDWMin(RawPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_getRpropDWMin(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_setRpropDWMin(RawPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_setRpropDWMin(Handle, value));
         }
     }
 
@@ -234,15 +218,13 @@ public class ANN_MLP : StatModel
         get
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_getRpropDWMax(RawPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_getRpropDWMax(Handle, out var ret));
             return ret;
         }
         set
         {
             NativeMethods.HandleException(
-                NativeMethods.ml_ANN_MLP_setRpropDWMax(RawPtr, value));
-            GC.KeepAlive(this);
+                NativeMethods.ml_ANN_MLP_setRpropDWMax(Handle, value));
         }
     }
 
@@ -262,9 +244,8 @@ public class ANN_MLP : StatModel
             throw new InvalidEnumArgumentException(nameof(method), (int)method, typeof(TrainingMethods));
 
         NativeMethods.HandleException(
-            NativeMethods.ml_ANN_MLP_setTrainMethod(RawPtr, (int)method, param1, param2));
+            NativeMethods.ml_ANN_MLP_setTrainMethod(Handle, (int)method, param1, param2));
             
-        GC.KeepAlive(this);
     }
 
     /// <summary>
@@ -274,8 +255,7 @@ public class ANN_MLP : StatModel
     public virtual TrainingMethods GetTrainMethod()
     {
         NativeMethods.HandleException(
-            NativeMethods.ml_ANN_MLP_getTrainMethod(RawPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.ml_ANN_MLP_getTrainMethod(Handle, out var ret));
         return (TrainingMethods) ret;
     }
 
@@ -292,9 +272,8 @@ public class ANN_MLP : StatModel
             throw new InvalidEnumArgumentException(nameof(type), (int)type, typeof(ActivationFunctions));
             
         NativeMethods.HandleException(
-            NativeMethods.ml_ANN_MLP_setActivationFunction(RawPtr, (int)type, param1, param2));
+            NativeMethods.ml_ANN_MLP_setActivationFunction(Handle, (int)type, param1, param2));
 
-        GC.KeepAlive(this);
     }
 
     /// <summary>
@@ -306,14 +285,11 @@ public class ANN_MLP : StatModel
     public virtual void SetLayerSizes(InputArray layerSizes)
     {
         ThrowIfDisposed();
-        if (layerSizes is null)
-            throw new ArgumentNullException(nameof(layerSizes));
 
         NativeMethods.HandleException(
-            NativeMethods.ml_ANN_MLP_setLayerSizes(RawPtr, layerSizes.CvPtr));
+            NativeMethods.ml_ANN_MLP_setLayerSizes(Handle, layerSizes.Proxy));
 
-        GC.KeepAlive(this);
-        GC.KeepAlive(layerSizes);
+        GC.KeepAlive(layerSizes.Source);
     }
 
     /// <summary>
@@ -327,9 +303,8 @@ public class ANN_MLP : StatModel
         ThrowIfDisposed();
 
         NativeMethods.HandleException(
-            NativeMethods.ml_ANN_MLP_getLayerSizes(RawPtr, out var ret));
+            NativeMethods.ml_ANN_MLP_getLayerSizes(Handle, out var ret));
 
-        GC.KeepAlive(this);
         return new Mat(ret);
     }
 

@@ -1,4 +1,4 @@
-﻿using OpenCvSharp.Internal;
+using OpenCvSharp.Internal;
 
 namespace OpenCvSharp;
 
@@ -30,12 +30,10 @@ public abstract class Algorithm : CvPtrObject
     public virtual void Write(FileStorage fs)
     {
         ThrowIfDisposed();
-        if (fs is null)
-            throw new ArgumentNullException(nameof(fs));
+        ArgumentNullException.ThrowIfNull(fs);
 
         NativeMethods.HandleException(
-            NativeMethods.core_Algorithm_write(RawPtr, fs.CvPtr));
-        GC.KeepAlive(this);
+            NativeMethods.core_Algorithm_write(Handle, fs.CvPtr));
         GC.KeepAlive(fs);
     }
 
@@ -46,12 +44,10 @@ public abstract class Algorithm : CvPtrObject
     public virtual void Read(FileNode fn)
     {
         ThrowIfDisposed();
-        if (fn is null)
-            throw new ArgumentNullException(nameof(fn));
+        ArgumentNullException.ThrowIfNull(fn);
 
         NativeMethods.HandleException(
-            NativeMethods.core_Algorithm_read(RawPtr, fn.CvPtr));
-        GC.KeepAlive(this);
+            NativeMethods.core_Algorithm_read(Handle, fn.CvPtr));
         GC.KeepAlive(fn);
     }
 
@@ -65,8 +61,7 @@ public abstract class Algorithm : CvPtrObject
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.core_Algorithm_empty(RawPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.core_Algorithm_empty(Handle, out var ret));
             return ret != 0;
         }
     }
@@ -80,12 +75,10 @@ public abstract class Algorithm : CvPtrObject
     public virtual void Save(string fileName)
     {
         ThrowIfDisposed();
-        if (fileName is null)
-            throw new ArgumentNullException(nameof(fileName));
+        ArgumentNullException.ThrowIfNull(fileName);
 
         NativeMethods.HandleException(
-            NativeMethods.core_Algorithm_save(RawPtr, fileName));
-        GC.KeepAlive(this);
+            NativeMethods.core_Algorithm_save(Handle, fileName));
     }
 
     /// <summary>
@@ -100,8 +93,7 @@ public abstract class Algorithm : CvPtrObject
 
         using var buf = new StdString();
         NativeMethods.HandleException(
-            NativeMethods.core_Algorithm_getDefaultName(RawPtr, buf.CvPtr));
-        GC.KeepAlive(this);
+            NativeMethods.core_Algorithm_getDefaultName(Handle, buf.CvPtr));
         return buf.ToString();
     }
 }

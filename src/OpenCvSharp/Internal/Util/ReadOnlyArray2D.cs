@@ -1,4 +1,4 @@
-﻿namespace OpenCvSharp.Internal.Util;
+namespace OpenCvSharp.Internal.Util;
 
 /// <summary>
 /// Readonly rectangular array (T[,])
@@ -14,7 +14,8 @@ public class ReadOnlyArray2D<T>
     /// <param name="data"></param>
     public ReadOnlyArray2D(T[,] data)
     {
-        this.data = data ?? throw new ArgumentNullException(nameof(data));
+        ArgumentNullException.ThrowIfNull(data);
+        this.data = data;
     }
 
     /// <summary>

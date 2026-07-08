@@ -1,4 +1,4 @@
-﻿using OpenCvSharp.Internal;
+using OpenCvSharp.Internal;
 using OpenCvSharp.Internal.Vectors;
 
 // ReSharper disable UnusedMember.Global
@@ -7,6 +7,48 @@ namespace OpenCvSharp;
 
 static partial class Cv2
 {
+    // OpenCV's highgui stores raw function pointers for the mouse/trackbar callbacks of each
+    // (name-keyed, process-global) window and invokes them later, from its own UI loop. The
+    // managed delegates must therefore be kept alive until the owning window is destroyed,
+    // otherwise the GC could collect one that OpenCV still calls -> crash. This registry mirrors
+    // OpenCV's name-keyed model and is the single place those delegates are rooted.
+    private static readonly Dictionary<string, MouseCallback> mouseCallbacks = [];
+    private static readonly Dictionary<(string Window, string Trackbar), TrackbarCallbackNative> trackbarCallbacks = [];
+    private static readonly object highguiCallbackSync = new();
+
+    private static void RegisterMouseCallback(string winName, MouseCallback onMouse)
+    {
+        lock (highguiCallbackSync)
+            mouseCallbacks[winName] = onMouse;
+    }
+
+    private static void RegisterTrackbarCallback(string winName, string trackbarName, TrackbarCallbackNative? onChange)
+    {
+        if (onChange is null)
+            return;
+        lock (highguiCallbackSync)
+            trackbarCallbacks[(winName, trackbarName)] = onChange;
+    }
+
+    private static void ForgetWindowCallbacks(string winName)
+    {
+        lock (highguiCallbackSync)
+        {
+            mouseCallbacks.Remove(winName);
+            foreach (var key in trackbarCallbacks.Keys.Where(k => k.Window == winName).ToArray())
+                trackbarCallbacks.Remove(key);
+        }
+    }
+
+    private static void ForgetAllCallbacks()
+    {
+        lock (highguiCallbackSync)
+        {
+            mouseCallbacks.Clear();
+            trackbarCallbacks.Clear();
+        }
+    }
+
     /// <summary>
     /// Creates a window.
     /// </summary>
@@ -35,6 +77,8 @@ static partial class Cv2
 
         NativeMethods.HandleException(
             NativeMethods.highgui_destroyWindow(winName));
+
+        ForgetWindowCallbacks(winName);
     }
 
     /// <summary>
@@ -44,6 +88,8 @@ static partial class Cv2
     {
         NativeMethods.HandleException(
             NativeMethods.highgui_destroyAllWindows());
+
+        ForgetAllCallbacks();
     }
 
     /// <summary>
@@ -92,8 +138,7 @@ static partial class Cv2
     {
         if (string.IsNullOrEmpty(winName))
             throw new ArgumentException("null or empty string.", nameof(winName));
-        if (mat is null)
-            throw new ArgumentNullException(nameof(mat));
+        ArgumentNullException.ThrowIfNull(mat);
 
         NativeMethods.HandleException(
             NativeMethods.highgui_imshow(winName, mat.CvPtr));
@@ -213,11 +258,13 @@ static partial class Cv2
     {
         if (string.IsNullOrEmpty(windowName))
             throw new ArgumentNullException(nameof(windowName));
-        if (onMouse is null)
-            throw new ArgumentNullException(nameof(onMouse));
+        ArgumentNullException.ThrowIfNull(onMouse);
 
         NativeMethods.HandleException(
             NativeMethods.highgui_setMouseCallback(windowName, onMouse, userData));
+
+        // Root the delegate for the lifetime of the window (see registry note above).
+        RegisterMouseCallback(windowName, onMouse);
     }
 
     /// <summary>
@@ -257,14 +304,11 @@ static partial class Cv2
     {
         if (string.IsNullOrEmpty(windowName))
             throw new ArgumentNullException(nameof(windowName));
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
-        img.ThrowIfDisposed();
 
         NativeMethods.HandleException(
-            NativeMethods.highgui_selectROI1(windowName, img.CvPtr, showCrosshair ? 1 : 0, fromCenter ? 1 : 0, out var ret));
+            NativeMethods.highgui_selectROI1(windowName, img.Proxy, showCrosshair ? 1 : 0, fromCenter ? 1 : 0, out var ret));
 
-        GC.KeepAlive(img);
+        GC.KeepAlive(img.Source);
         return ret;
     }
 
@@ -281,14 +325,10 @@ static partial class Cv2
     // ReSharper disable once InconsistentNaming
     public static Rect SelectROI(InputArray img, bool showCrosshair = true, bool fromCenter = false)
     {
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
-        img.ThrowIfDisposed();
-
         NativeMethods.HandleException(
-            NativeMethods.highgui_selectROI2(img.CvPtr, showCrosshair ? 1 : 0, fromCenter ? 1 : 0, out var ret));
+            NativeMethods.highgui_selectROI2(img.Proxy, showCrosshair ? 1 : 0, fromCenter ? 1 : 0, out var ret));
 
-        GC.KeepAlive(img);
+        GC.KeepAlive(img.Source);
         return ret;
     }
 
@@ -309,15 +349,12 @@ static partial class Cv2
     {
         if (string.IsNullOrEmpty(windowName))
             throw new ArgumentNullException(nameof(windowName));
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
-        img.ThrowIfDisposed();
 
-        using var boundingBoxesVec = new VectorOfRect();
+        using var boundingBoxesVec = new StdVector<Rect>();
         NativeMethods.HandleException(
-            NativeMethods.highgui_selectROIs(windowName, img.CvPtr, boundingBoxesVec.CvPtr, showCrosshair ? 1 : 0, fromCenter ? 1 : 0));
+            NativeMethods.highgui_selectROIs(windowName, img.Proxy, boundingBoxesVec.CvPtr, showCrosshair ? 1 : 0, fromCenter ? 1 : 0));
 
-        GC.KeepAlive(img);
+        GC.KeepAlive(img.Source);
         return boundingBoxesVec.ToArray();
     }
 
@@ -342,13 +379,14 @@ static partial class Cv2
     public static int CreateTrackbar(string trackbarName, string winName,
         ref int value, int count, TrackbarCallbackNative? onChange = null, IntPtr userData = default)
     {
-        if (trackbarName is null)
-            throw new ArgumentNullException(nameof(trackbarName));
-        if (winName is null)
-            throw new ArgumentNullException(nameof(winName));
+        ArgumentNullException.ThrowIfNull(trackbarName);
+        ArgumentNullException.ThrowIfNull(winName);
 
         NativeMethods.HandleException(
             NativeMethods.highgui_createTrackbar(trackbarName, winName, ref value, count, onChange, userData, out var ret));
+
+        // Root the delegate for the lifetime of the window (see registry note above).
+        RegisterTrackbarCallback(winName, trackbarName, onChange);
         return ret;
     }
         
@@ -371,13 +409,14 @@ static partial class Cv2
     public static int CreateTrackbar(string trackbarName, string winName,
         int count, TrackbarCallbackNative? onChange = null, IntPtr userData = default)
     {
-        if (trackbarName is null)
-            throw new ArgumentNullException(nameof(trackbarName));
-        if (winName is null)
-            throw new ArgumentNullException(nameof(winName));
+        ArgumentNullException.ThrowIfNull(trackbarName);
+        ArgumentNullException.ThrowIfNull(winName);
 
         NativeMethods.HandleException(
             NativeMethods.highgui_createTrackbar(trackbarName, winName, IntPtr.Zero, count, onChange, userData, out var ret));
+
+        // Root the delegate for the lifetime of the window (see registry note above).
+        RegisterTrackbarCallback(winName, trackbarName, onChange);
         return ret;
     }
 
@@ -389,8 +428,7 @@ static partial class Cv2
     /// <returns>trackbar position</returns>
     public static int GetTrackbarPos(string trackbarName, string winName)
     {
-        if (trackbarName is null)
-            throw new ArgumentNullException(nameof(trackbarName));
+        ArgumentNullException.ThrowIfNull(trackbarName);
 
         NativeMethods.HandleException(
             NativeMethods.highgui_getTrackbarPos(trackbarName, winName, out var ret));
@@ -405,8 +443,7 @@ static partial class Cv2
     /// <param name="pos">New position.</param>
     public static void SetTrackbarPos(string trackbarName, string winName, int pos)
     {
-        if (trackbarName is null)
-            throw new ArgumentNullException(nameof(trackbarName));
+        ArgumentNullException.ThrowIfNull(trackbarName);
 
         NativeMethods.HandleException(
             NativeMethods.highgui_setTrackbarPos(trackbarName, winName, pos));
@@ -421,8 +458,7 @@ static partial class Cv2
     /// <param name="maxVal">New maximum position.</param>
     public static void SetTrackbarMax(string trackbarName, string winName, int maxVal)
     {
-        if (trackbarName is null)
-            throw new ArgumentNullException(nameof(trackbarName));
+        ArgumentNullException.ThrowIfNull(trackbarName);
 
         NativeMethods.HandleException(
             NativeMethods.highgui_setTrackbarMax(trackbarName, winName, maxVal));
@@ -437,38 +473,9 @@ static partial class Cv2
     /// <param name="minVal">New minimum position.</param>
     public static void SetTrackbarMin(string trackbarName, string winName, int minVal)
     {
-        if (trackbarName is null)
-            throw new ArgumentNullException(nameof(trackbarName));
+        ArgumentNullException.ThrowIfNull(trackbarName);
 
         NativeMethods.HandleException(
             NativeMethods.highgui_setTrackbarMin(trackbarName, winName, minVal));
     }
-
-    /// <summary>
-    /// get native window handle (HWND in case of Win32 and Widget in case of X Window) 
-    /// </summary>
-    /// <param name="windowName"></param>
-    public static IntPtr GetWindowHandle(string windowName)
-    {
-        if (windowName is null)
-            throw new ArgumentNullException(nameof(windowName));
-
-        NativeMethods.HandleException(
-            NativeMethods.highgui_cvGetWindowHandle(windowName, out var ret));
-        return ret;
-    }
-
-#if WINRT
-        // MP! Added: To correctly support imShow under WinRT.
-
-        /// <summary>
-        /// Initialize XAML container panel for use by ImShow
-        /// </summary>
-        /// <param name="panel">Panel container.</param>
-        public static void InitContainer(object panel)
-        {
-            NativeMethods.HandleException(
-                NativeMethods.highgui_initContainer(panel));
-        }
-#endif
 }

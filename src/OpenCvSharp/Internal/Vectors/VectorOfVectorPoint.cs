@@ -1,4 +1,4 @@
-﻿using OpenCvSharp.Internal.Util;
+using OpenCvSharp.Internal.Util;
 
 namespace OpenCvSharp.Internal.Vectors;
 
@@ -19,11 +19,10 @@ public class VectorOfVectorPoint : CvObject, IStdVector<Point[]>
     /// Constructor
     /// </summary>
     /// <param name="size"></param>
-    public VectorOfVectorPoint(nuint size)
+    public VectorOfVectorPoint(int size)
     {
-        if (size < 0)
-            throw new ArgumentOutOfRangeException(nameof(size));
-        var p = NativeMethods.vector_vector_Point_new2(size);
+        ArgumentOutOfRangeException.ThrowIfNegative(size);
+        var p = NativeMethods.vector_vector_Point_new2((nuint)size);
         SetSafeHandle(new OpenCvPtrSafeHandle(p, ownsHandle: false, releaseAction: null));
     }
 
@@ -41,8 +40,7 @@ public class VectorOfVectorPoint : CvObject, IStdVector<Point[]>
     /// </summary>
     public int GetSize1()
     {
-        var res = NativeMethods.vector_vector_Point_getSize1(CvPtr);
-        GC.KeepAlive(this);
+        var res = NativeMethods.vector_vector_Point_getSize1(Handle);
         return (int)res;
     }
 
@@ -58,8 +56,7 @@ public class VectorOfVectorPoint : CvObject, IStdVector<Point[]>
     {
         var size1 = GetSize1();
         var size2 = new nuint[size1];
-        NativeMethods.vector_vector_Point_getSize2(CvPtr, size2);
-        GC.KeepAlive(this);
+        NativeMethods.vector_vector_Point_getSize2(Handle, size2);
         return size2.Select(s => (long)s).ToArray();
     }
 
@@ -81,8 +78,7 @@ public class VectorOfVectorPoint : CvObject, IStdVector<Point[]>
         }
 
         using var retPtr = new ArrayAddress2<Point>(ret);
-        NativeMethods.vector_vector_Point_copy(CvPtr, retPtr.GetPointer());
-        GC.KeepAlive(this);
+        NativeMethods.vector_vector_Point_copy(Handle, retPtr.GetPointer());
         return ret;
     }
 }

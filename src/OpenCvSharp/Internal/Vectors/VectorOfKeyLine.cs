@@ -1,8 +1,8 @@
-﻿#if false
+using OpenCvSharp.LineDescriptor;
 
 namespace OpenCvSharp.Internal.Vectors
 {
-    /// <summary> 
+    /// <summary>
     /// </summary>
     public class VectorOfKeyLine : CvObject, IStdVector<KeyLine>
     {
@@ -31,8 +31,7 @@ namespace OpenCvSharp.Internal.Vectors
         {
             get
             {
-                var res = NativeMethods.vector_KeyLine_getSize(CvPtr);
-                GC.KeepAlive(this);
+                var res = NativeMethods.vector_KeyLine_getSize(Handle);
                 return (int)res;
             }
         }
@@ -44,7 +43,7 @@ namespace OpenCvSharp.Internal.Vectors
         {
             get
             {
-                var res = NativeMethods.vector_KeyLine_getPointer(CvPtr);
+                var res = NativeMethods.vector_KeyLine_getPointer(Handle);
                 GC.KeepAlive(this);
                 return res;
             }
@@ -61,20 +60,13 @@ namespace OpenCvSharp.Internal.Vectors
             {
                 return Array.Empty<KeyLine>();
             }
-            var dst = new KeyLine[size];
-            using (var dstPtr = new ArrayAddress1<KeyLine>(dst))
+            unsafe
             {
-                long bytesToCopy = Marshal.SizeOf<KeyLine>() * dst.Length;
-                unsafe
-                {
-                    Buffer.MemoryCopy(ElemPtr.ToPointer(), dstPtr.Pointer.ToPointer(), bytesToCopy, bytesToCopy);
-                }
+                var dst = new ReadOnlySpan<KeyLine>((void*)ElemPtr, size).ToArray();
+                // ElemPtr aliases memory held by this object; keep it alive until the copy completes.
+                GC.KeepAlive(this);
+                return dst;
             }
-            GC.KeepAlive(this); // ElemPtr is IntPtr to memory held by this object, so
-            // make sure we are not disposed until finished with copy.
-            return dst;
         }
     }
 }
-
-#endif

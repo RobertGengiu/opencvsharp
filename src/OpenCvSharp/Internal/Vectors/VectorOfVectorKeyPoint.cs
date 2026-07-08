@@ -1,4 +1,4 @@
-﻿using OpenCvSharp.Internal.Util;
+using OpenCvSharp.Internal.Util;
 
 namespace OpenCvSharp.Internal.Vectors;
 
@@ -21,8 +21,7 @@ public class VectorOfVectorKeyPoint : CvObject, IStdVector<KeyPoint[]>
     /// <param name="values"></param>
     public VectorOfVectorKeyPoint(KeyPoint[][] values)
     {
-        if (values is null)
-            throw new ArgumentNullException(nameof(values));
+        ArgumentNullException.ThrowIfNull(values);
 
         using var aa = new ArrayAddress2<KeyPoint>(values);
         var p = NativeMethods.vector_vector_KeyPoint_new3(
@@ -44,8 +43,7 @@ public class VectorOfVectorKeyPoint : CvObject, IStdVector<KeyPoint[]>
     /// </summary>
     public int GetSize1()
     {
-        var res = NativeMethods.vector_vector_KeyPoint_getSize1(CvPtr);
-        GC.KeepAlive(this);
+        var res = NativeMethods.vector_vector_KeyPoint_getSize1(Handle);
         return (int)res;
     }
 
@@ -61,8 +59,7 @@ public class VectorOfVectorKeyPoint : CvObject, IStdVector<KeyPoint[]>
     {
         var size1 = GetSize1();
         var size2 = new nuint[size1];
-        NativeMethods.vector_vector_KeyPoint_getSize2(CvPtr, size2);
-        GC.KeepAlive(this);
+        NativeMethods.vector_vector_KeyPoint_getSize2(Handle, size2);
         return size2.Select(s => (long)s).ToArray();
     }
 
@@ -84,8 +81,7 @@ public class VectorOfVectorKeyPoint : CvObject, IStdVector<KeyPoint[]>
         }
 
         using var retPtr = new ArrayAddress2<KeyPoint>(ret);
-        NativeMethods.vector_vector_KeyPoint_copy(CvPtr, retPtr.GetPointer());
-        GC.KeepAlive(this);
+        NativeMethods.vector_vector_KeyPoint_copy(Handle, retPtr.GetPointer());
         return ret;
     }
 }

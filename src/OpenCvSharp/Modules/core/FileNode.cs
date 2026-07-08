@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using OpenCvSharp.Internal;
 using OpenCvSharp.Internal.Vectors;
@@ -56,8 +56,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     /// <returns></returns>
     public static explicit operator int(FileNode node)
     {
-        if (node is null)
-            throw new ArgumentNullException(nameof(node));
+        ArgumentNullException.ThrowIfNull(node);
         return node.ToInt32();
     }
 
@@ -70,9 +69,8 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         ThrowIfDisposed();
 
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_toInt(CvPtr, out var ret));
+            NativeMethods.core_FileNode_toInt(Handle, out var ret));
 
-        GC.KeepAlive(this);
         return ret;
     }
 
@@ -83,8 +81,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     /// <returns></returns>
     public static explicit operator float(FileNode node)
     {
-        if (node is null)
-            throw new ArgumentNullException(nameof(node));
+        ArgumentNullException.ThrowIfNull(node);
         return node.ToSingle();
     }
 
@@ -97,9 +94,8 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         ThrowIfDisposed();
 
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_toFloat(CvPtr, out var ret));
+            NativeMethods.core_FileNode_toFloat(Handle, out var ret));
 
-        GC.KeepAlive(this);
         return ret;
     }
 
@@ -110,8 +106,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     /// <returns></returns>
     public static explicit operator double(FileNode node)
     {
-        if (node is null)
-            throw new ArgumentNullException(nameof(node));
+        ArgumentNullException.ThrowIfNull(node);
         return node.ToDouble();
     }
 
@@ -124,9 +119,8 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         ThrowIfDisposed();
 
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_toDouble(CvPtr, out var ret));
+            NativeMethods.core_FileNode_toDouble(Handle, out var ret));
 
-        GC.KeepAlive(this);
         return ret;
     }
 
@@ -137,8 +131,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     /// <returns></returns>
     public static explicit operator string(FileNode node)
     {
-        if (node is null)
-            throw new ArgumentNullException(nameof(node));
+        ArgumentNullException.ThrowIfNull(node);
         return node.ToString();
     }
 
@@ -152,9 +145,8 @@ public class FileNode : CvObject, IEnumerable<FileNode>
 
         using var buf = new StdString();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_toString(CvPtr, buf.CvPtr));
+            NativeMethods.core_FileNode_toString(Handle, buf.CvPtr));
 
-        GC.KeepAlive(this);
         return buf.ToString();
     }
         
@@ -165,8 +157,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     /// <returns></returns>
     public static explicit operator Mat(FileNode node)
     {
-        if (node is null)
-            throw new ArgumentNullException(nameof(node));
+        ArgumentNullException.ThrowIfNull(node);
         return node.ToMat();
     }
 
@@ -180,9 +171,8 @@ public class FileNode : CvObject, IEnumerable<FileNode>
 
         var matrix = new Mat();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_toMat(CvPtr, matrix.CvPtr));
+            NativeMethods.core_FileNode_toMat(Handle, matrix.CvPtr));
 
-        GC.KeepAlive(this);
         return matrix;
     }
 
@@ -198,13 +188,11 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         get
         {
             ThrowIfDisposed();
-            if (nodeName is null)
-                throw new ArgumentNullException(nameof(nodeName));
+            ArgumentNullException.ThrowIfNull(nodeName);
 
             NativeMethods.HandleException(
-                NativeMethods.core_FileNode_operatorThis_byString(CvPtr, nodeName, out var node));
+                NativeMethods.core_FileNode_operatorThis_byString(Handle, nodeName, out var node));
 
-            GC.KeepAlive(this);
             if (node == IntPtr.Zero)
                 return null;
             return new FileNode(node);
@@ -221,9 +209,8 @@ public class FileNode : CvObject, IEnumerable<FileNode>
             ThrowIfDisposed();
 
             NativeMethods.HandleException( 
-                NativeMethods.core_FileNode_operatorThis_byInt(CvPtr, i, out var node));
+                NativeMethods.core_FileNode_operatorThis_byInt(Handle, i, out var node));
 
-            GC.KeepAlive(this);
             if (node == IntPtr.Zero)
                 return null;
             return new FileNode(node);
@@ -240,8 +227,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.core_FileNode_empty(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.core_FileNode_empty(Handle, out var ret));
             return ret != 0;
         }
     }
@@ -256,8 +242,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         {
             ThrowIfDisposed();
             NativeMethods.HandleException( 
-                NativeMethods.core_FileNode_isNone(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.core_FileNode_isNone(Handle, out var ret));
             return ret != 0;
         }
     }
@@ -272,8 +257,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         {
             ThrowIfDisposed();
             NativeMethods.HandleException( 
-                NativeMethods.core_FileNode_isSeq(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.core_FileNode_isSeq(Handle, out var ret));
             return ret != 0;
         }
     }
@@ -288,8 +272,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         {
             ThrowIfDisposed();
             NativeMethods.HandleException( 
-                NativeMethods.core_FileNode_isMap(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.core_FileNode_isMap(Handle, out var ret));
             return ret != 0;
         }
     }
@@ -304,8 +287,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.core_FileNode_isInt(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.core_FileNode_isInt(Handle, out var ret));
             return ret != 0;
         }
     }
@@ -320,8 +302,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         {
             ThrowIfDisposed();
             NativeMethods.HandleException( 
-                NativeMethods.core_FileNode_isReal(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.core_FileNode_isReal(Handle, out var ret));
             return ret != 0;
         }
     }
@@ -336,8 +317,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         {
             ThrowIfDisposed();
             NativeMethods.HandleException( 
-                NativeMethods.core_FileNode_isString(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.core_FileNode_isString(Handle, out var ret));
             return ret != 0;
         }
     }
@@ -352,8 +332,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.core_FileNode_isNamed(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.core_FileNode_isNamed(Handle, out var ret));
             return ret != 0;
         }
     }
@@ -369,8 +348,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
             ThrowIfDisposed();
             using var buf = new StdString();
             NativeMethods.HandleException(
-                NativeMethods.core_FileNode_name(CvPtr, buf.CvPtr));
-            GC.KeepAlive(this);
+                NativeMethods.core_FileNode_name(Handle, buf.CvPtr));
             return buf.ToString();
         }
     }
@@ -385,8 +363,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.core_FileNode_size(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.core_FileNode_size(Handle, out var ret));
             return ret.ToInt64();
         }
     }
@@ -401,8 +378,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.core_FileNode_type(CvPtr, out var ret));
-            GC.KeepAlive(this);
+                NativeMethods.core_FileNode_type(Handle, out var ret));
             return (Types)ret;
         }
     }
@@ -419,8 +395,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_begin(CvPtr, out var p));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_begin(Handle, out var p));
         return new FileNodeIterator(p);
     }
 
@@ -432,8 +407,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_end(CvPtr, out var p));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_end(Handle, out var p));
         return new FileNodeIterator(p);
     }
         
@@ -464,11 +438,9 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     public void ReadRaw(string fmt, IntPtr vec, long len)
     {
         ThrowIfDisposed();
-        if (fmt is null)
-            throw new ArgumentNullException(nameof(fmt));
+        ArgumentNullException.ThrowIfNull(fmt);
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_readRaw(CvPtr, fmt, vec, new IntPtr(len)));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_readRaw(Handle, fmt, vec, new IntPtr(len)));
     }
 
     #region Read
@@ -481,8 +453,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     public int ReadInt(int defaultValue = default)
     {
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_int(CvPtr, out var value, defaultValue));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_int(Handle, out var value, defaultValue));
         return value;
     }
 
@@ -494,8 +465,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     public float ReadFloat(float defaultValue = default)
     {
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_float(CvPtr, out var value, defaultValue));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_float(Handle, out var value, defaultValue));
         return value;
     }
 
@@ -507,8 +477,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     public double ReadDouble(double defaultValue = default)
     {
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_double(CvPtr, out var value, defaultValue));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_double(Handle, out var value, defaultValue));
         return value;
     }
 
@@ -521,8 +490,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         using var value = new StdString();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_String(CvPtr, value.CvPtr, defaultValue));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_String(Handle, value.CvPtr, defaultValue));
         return value.ToString();
     }
 
@@ -537,9 +505,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         try
         {
             NativeMethods.HandleException(
-                NativeMethods.core_FileNode_read_Mat(CvPtr, value.CvPtr, Cv2.ToPtr(defaultMat)));
-            GC.KeepAlive(this);
-            GC.KeepAlive(defaultMat);
+                NativeMethods.core_FileNode_read_Mat(Handle, value.CvPtr, defaultMat?.Handle ?? OpenCvSafeHandle.Null));
         }
         catch
         {
@@ -560,9 +526,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
         try
         {
             NativeMethods.HandleException(
-                NativeMethods.core_FileNode_read_SparseMat(CvPtr, value.CvPtr, Cv2.ToPtr(defaultMat)));
-            GC.KeepAlive(this);
-            GC.KeepAlive(defaultMat);
+                NativeMethods.core_FileNode_read_SparseMat(Handle, value.CvPtr, defaultMat?.Handle ?? OpenCvSafeHandle.Null));
         }
         catch
         {
@@ -578,10 +542,9 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     /// <returns></returns>
     public KeyPoint[] ReadKeyPoints()
     {
-        using var valueVector = new VectorOfKeyPoint();
+        using var valueVector = new StdVector<KeyPoint>();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_vectorOfKeyPoint(CvPtr, valueVector.CvPtr));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_vectorOfKeyPoint(Handle, valueVector.CvPtr));
         return valueVector.ToArray();
     }
 
@@ -591,10 +554,9 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     /// <returns></returns>
     public DMatch[] ReadDMatches()
     {
-        using var valueVector = new VectorOfDMatch();
+        using var valueVector = new StdVector<DMatch>();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_vectorOfDMatch(CvPtr, valueVector.CvPtr));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_vectorOfDMatch(Handle, valueVector.CvPtr));
         return valueVector.ToArray();
     }
 
@@ -606,8 +568,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_Range(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Range(Handle, out var ret));
         return ret;
     }
 
@@ -618,8 +579,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     public KeyPoint ReadKeyPoint()
     {
         ThrowIfDisposed();
-        NativeMethods.HandleException( NativeMethods.core_FileNode_read_KeyPoint(CvPtr, out var ret));
-        GC.KeepAlive(this);
+        NativeMethods.HandleException( NativeMethods.core_FileNode_read_KeyPoint(Handle, out var ret));
         return ret;
     }
 
@@ -630,8 +590,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     public DMatch ReadDMatch()
     {
         ThrowIfDisposed();
-        NativeMethods.HandleException(NativeMethods.core_FileNode_read_DMatch(CvPtr, out var ret));
-        GC.KeepAlive(this);
+        NativeMethods.HandleException(NativeMethods.core_FileNode_read_DMatch(Handle, out var ret));
         return ret;
     }
 
@@ -642,8 +601,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     public Point ReadPoint()
     {
         ThrowIfDisposed();
-        NativeMethods.HandleException( NativeMethods.core_FileNode_read_Point2i(CvPtr, out var ret));
-        GC.KeepAlive(this);
+        NativeMethods.HandleException( NativeMethods.core_FileNode_read_Point2i(Handle, out var ret));
         return ret;
     }
 
@@ -654,8 +612,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     public Point2f ReadPoint2f()
     {
         ThrowIfDisposed();
-        NativeMethods.HandleException( NativeMethods.core_FileNode_read_Point2f(CvPtr, out var ret));
-        GC.KeepAlive(this);
+        NativeMethods.HandleException( NativeMethods.core_FileNode_read_Point2f(Handle, out var ret));
         return ret;
     }
 
@@ -666,8 +623,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     public Point2d ReadPoint2d()
     {
         ThrowIfDisposed();
-        NativeMethods.HandleException( NativeMethods.core_FileNode_read_Point2d(CvPtr, out var ret));
-        GC.KeepAlive(this);
+        NativeMethods.HandleException( NativeMethods.core_FileNode_read_Point2d(Handle, out var ret));
         return ret;
     }
 
@@ -679,8 +635,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Point3i(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Point3i(Handle, out var ret));
         return ret;
     }
 
@@ -692,8 +647,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Point3f(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Point3f(Handle, out var ret));
         return ret;
     }
 
@@ -705,8 +659,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_Point3d(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Point3d(Handle, out var ret));
         return ret;
     }
 
@@ -718,8 +671,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_Size2i(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Size2i(Handle, out var ret));
         return ret;
     }
 
@@ -731,8 +683,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_Size2f(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Size2f(Handle, out var ret));
         return ret;
     }
 
@@ -744,8 +695,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_Size2d(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Size2d(Handle, out var ret));
         return ret;
     }
 
@@ -757,8 +707,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Rect2i(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Rect2i(Handle, out var ret));
         return ret;
     }
 
@@ -770,8 +719,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_Rect2f(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Rect2f(Handle, out var ret));
         return ret;
     }
 
@@ -783,8 +731,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_Rect2d(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Rect2d(Handle, out var ret));
         return ret;
     }
 
@@ -796,8 +743,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_Scalar(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Scalar(Handle, out var ret));
         return ret;
     }
 
@@ -809,8 +755,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_Vec2i(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec2i(Handle, out var ret));
         return ret;
     }
 
@@ -822,8 +767,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec3i(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec3i(Handle, out var ret));
         return ret;
     }
 
@@ -835,8 +779,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec4i(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec4i(Handle, out var ret));
         return ret;
     }
 
@@ -848,8 +791,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec6i(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec6i(Handle, out var ret));
         return ret;
     }
 
@@ -861,8 +803,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec2d(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec2d(Handle, out var ret));
         return ret;
     }
 
@@ -874,8 +815,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec3d(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec3d(Handle, out var ret));
         return ret;
     }
 
@@ -887,8 +827,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec4d(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec4d(Handle, out var ret));
         return ret;
     }
 
@@ -900,8 +839,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec6d(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec6d(Handle, out var ret));
         return ret;
     }
 
@@ -913,8 +851,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec2f(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec2f(Handle, out var ret));
         return ret;
     }
 
@@ -926,8 +863,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec3f(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec3f(Handle, out var ret));
         return ret;
     }
 
@@ -939,8 +875,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec4f(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec4f(Handle, out var ret));
         return ret;
     }
 
@@ -952,8 +887,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec6f(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec6f(Handle, out var ret));
         return ret;
     }
         
@@ -965,8 +899,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec2b(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec2b(Handle, out var ret));
         return ret;
     }
 
@@ -978,8 +911,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec3b(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec3b(Handle, out var ret));
         return ret;
     }
 
@@ -991,8 +923,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_Vec4b(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec4b(Handle, out var ret));
         return ret;
     }
 
@@ -1004,8 +935,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec6b(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec6b(Handle, out var ret));
         return ret;
     }
 
@@ -1018,8 +948,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec2s(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec2s(Handle, out var ret));
         return ret;
     }
 
@@ -1031,8 +960,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_Vec3s(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec3s(Handle, out var ret));
         return ret;
     }
 
@@ -1044,8 +972,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec4s(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec4s(Handle, out var ret));
         return ret;
     }
 
@@ -1057,8 +984,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_Vec6s(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec6s(Handle, out var ret));
         return ret;
     }
         
@@ -1070,8 +996,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_Vec2w(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec2w(Handle, out var ret));
         return ret;
     }
 
@@ -1083,8 +1008,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec3w(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec3w(Handle, out var ret));
         return ret;
     }
 
@@ -1096,8 +1020,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException( 
-            NativeMethods.core_FileNode_read_Vec4w(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec4w(Handle, out var ret));
         return ret;
     }
 
@@ -1109,8 +1032,7 @@ public class FileNode : CvObject, IEnumerable<FileNode>
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNode_read_Vec6w(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNode_read_Vec6w(Handle, out var ret));
         return ret;
     }
 

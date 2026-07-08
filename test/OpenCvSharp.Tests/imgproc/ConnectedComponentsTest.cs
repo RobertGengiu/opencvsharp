@@ -1,4 +1,4 @@
-﻿using Xunit;
+using Xunit;
 
 namespace OpenCvSharp.Tests.ImgProc;
 
@@ -20,6 +20,25 @@ public class ConnectedComponentsTest : TestBase
             
         Assert.Equal(27, cc.LabelCount);
         Assert.NotEmpty(cc.Labels.GetBuffer());
+        Assert.Equal(src.Rows, cc.Labels.GetLength(0));
+        Assert.Equal(src.Cols, cc.Labels.GetLength(1));
+
+        using var render = new Mat();
+        cc.RenderBlobs(render);
+        ShowImagesWhenDebugMode(render);
+    }
+
+    [Fact]
+    public void RunWithCv16ULabelType()
+    {
+        using var src = LoadImage("alphabet.png", ImreadModes.Grayscale);
+        using var binary = new Mat();
+        Cv2.Threshold(src, binary, 128, 255, ThresholdTypes.BinaryInv);
+
+        var cc = Cv2.ConnectedComponentsEx(
+            binary, PixelConnectivity.Connectivity8, ConnectedComponentsAlgorithmsTypes.Default, MatType.CV_16U);
+
+        Assert.Equal(27, cc.LabelCount);
         Assert.Equal(src.Rows, cc.Labels.GetLength(0));
         Assert.Equal(src.Cols, cc.Labels.GetLength(1));
 

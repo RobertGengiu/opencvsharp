@@ -1,4 +1,4 @@
-﻿namespace OpenCvSharp.Internal.Vectors;
+namespace OpenCvSharp.Internal.Vectors;
 
 /// <summary> 
 /// </summary>
@@ -19,8 +19,7 @@ public class VectorOfMat : CvObject, IStdVector<Mat>
     /// <param name="size"></param>
     public VectorOfMat(int size)
     {
-        if (size < 0)
-            throw new ArgumentOutOfRangeException(nameof(size));
+        ArgumentOutOfRangeException.ThrowIfNegative(size);
         var p = NativeMethods.vector_Mat_new2((uint)size);
         SetSafeHandle(new OpenCvPtrSafeHandle(p, ownsHandle: false, releaseAction: null));
     }
@@ -31,8 +30,7 @@ public class VectorOfMat : CvObject, IStdVector<Mat>
     /// <param name="mats"></param>
     public VectorOfMat(IEnumerable<Mat> mats)
     {
-        if (mats is null)
-            throw new ArgumentNullException(nameof(mats));
+        ArgumentNullException.ThrowIfNull(mats);
 
         var matsArray = mats.ToArray();
         var matPointers = matsArray.Select(x => x.CvPtr).ToArray();
@@ -67,22 +65,8 @@ public class VectorOfMat : CvObject, IStdVector<Mat>
     {
         get
         {
-            var res = NativeMethods.vector_Mat_getSize(CvPtr);
-            GC.KeepAlive(this);
+            var res = NativeMethods.vector_Mat_getSize(Handle);
             return (int)res;
-        }
-    }
-
-    /// <summary>
-    /// &amp;vector[0]
-    /// </summary>
-    public IntPtr ElemPtr
-    {
-        get
-        {
-            var res = NativeMethods.vector_Mat_getPointer(CvPtr);
-            GC.KeepAlive(this);
-            return res;
         }
     }
 
@@ -114,8 +98,7 @@ public class VectorOfMat : CvObject, IStdVector<Mat>
             dst[i] = m;
             dstPtr[i] = m.CvPtr;
         }
-        NativeMethods.vector_Mat_assignToArray(CvPtr, dstPtr);
-        GC.KeepAlive(this);
+        NativeMethods.vector_Mat_assignToArray(Handle, dstPtr);
 
         return dst;
     }

@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace OpenCvSharp;
@@ -103,8 +103,7 @@ public readonly struct FourCC : IEquatable<FourCC>
     /// <returns></returns>
     public static FourCC FromString(string code)
     {
-        if (code is null)
-            throw new ArgumentNullException(nameof(code));
+        ArgumentNullException.ThrowIfNull(code);
         if (code.Length == 0)
             throw new ArgumentException("code.Length == 0", nameof(code));
         if (code.Length > 4)

@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using OpenCvSharp.Internal;
 
 // ReSharper disable UnusedMember.Global
@@ -50,11 +50,9 @@ public class FileNodeIterator : CvObject, IEquatable<FileNodeIterator>, IEnumera
     /// <returns></returns>
     public FileNodeIterator ReadRaw(string fmt, IntPtr vec, long maxCount = int.MaxValue)
     {
-        if (fmt is null)
-            throw new ArgumentNullException(nameof(fmt));
+        ArgumentNullException.ThrowIfNull(fmt);
         NativeMethods.HandleException(
-            NativeMethods.core_FileNodeIterator_readRaw(CvPtr, fmt, vec, new IntPtr(maxCount)));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNodeIterator_readRaw(Handle, fmt, vec, new IntPtr(maxCount)));
         return this;
     }      
 
@@ -67,8 +65,7 @@ public class FileNodeIterator : CvObject, IEquatable<FileNodeIterator>, IEnumera
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.core_FileNodeIterator_operatorAsterisk(CvPtr, out var p));
-            GC.KeepAlive(this);
+                NativeMethods.core_FileNodeIterator_operatorAsterisk(Handle, out var p));
             return new FileNode(p);
         }
     }
@@ -88,8 +85,7 @@ public class FileNodeIterator : CvObject, IEquatable<FileNodeIterator>, IEnumera
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNodeIterator_operatorIncrement(CvPtr, out var changed));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNodeIterator_operatorIncrement(Handle, out var changed));
         return changed != 0;
     }
 
@@ -102,8 +98,7 @@ public class FileNodeIterator : CvObject, IEquatable<FileNodeIterator>, IEnumera
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.core_FileNodeIterator_operatorPlusEqual(CvPtr, ofs, out var changed));
-        GC.KeepAlive(this);
+            NativeMethods.core_FileNodeIterator_operatorPlusEqual(Handle, ofs, out var changed));
         return changed != 0;
     }
 
@@ -117,19 +112,16 @@ public class FileNodeIterator : CvObject, IEquatable<FileNodeIterator>, IEnumera
     /// <returns></returns>
     public FileNodeIterator ReadRaw(string fmt, byte[] vec, long maxCount = int.MaxValue)
     {
-        if (fmt is null)
-            throw new ArgumentNullException(nameof(fmt));
-        if (vec is null)
-            throw new ArgumentNullException(nameof(vec));
+        ArgumentNullException.ThrowIfNull(fmt);
+        ArgumentNullException.ThrowIfNull(vec);
         unsafe
         {
             fixed (byte* vecPtr = vec)
             {
                 NativeMethods.HandleException(
-                    NativeMethods.core_FileNodeIterator_readRaw(CvPtr, fmt, new IntPtr(vecPtr), new IntPtr(maxCount)));
+                    NativeMethods.core_FileNodeIterator_readRaw(Handle, fmt, new IntPtr(vecPtr), new IntPtr(maxCount)));
             }
         }
-        GC.KeepAlive(this);
         return this;
     }
         
@@ -149,9 +141,8 @@ public class FileNodeIterator : CvObject, IEquatable<FileNodeIterator>, IEnumera
         other.ThrowIfDisposed();
 
         NativeMethods.HandleException(
-            NativeMethods.core_FileNodeIterator_operatorEqual(CvPtr, other.CvPtr, out var ret));
+            NativeMethods.core_FileNodeIterator_operatorEqual(Handle, other.CvPtr, out var ret));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(other);
 
         return ret != 0;
@@ -161,15 +152,13 @@ public class FileNodeIterator : CvObject, IEquatable<FileNodeIterator>, IEnumera
         
     public long Minus(FileNodeIterator it)
     {
-        if (it is null)
-            throw new ArgumentNullException(nameof(it));
+        ArgumentNullException.ThrowIfNull(it);
         ThrowIfDisposed();
         it.ThrowIfDisposed();
 
         NativeMethods.HandleException(
-            NativeMethods.core_FileNodeIterator_operatorMinus(CvPtr, it.CvPtr, out var ret));
+            NativeMethods.core_FileNodeIterator_operatorMinus(Handle, it.CvPtr, out var ret));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(it);
 
         return ret.ToInt64();
@@ -177,15 +166,13 @@ public class FileNodeIterator : CvObject, IEquatable<FileNodeIterator>, IEnumera
         
     public bool LessThan(FileNodeIterator it)
     {
-        if (it is null)
-            throw new ArgumentNullException(nameof(it));
+        ArgumentNullException.ThrowIfNull(it);
         ThrowIfDisposed();
         it.ThrowIfDisposed();
 
         NativeMethods.HandleException(
-            NativeMethods.core_FileNodeIterator_operatorLessThan(CvPtr, it.CvPtr, out var ret));
+            NativeMethods.core_FileNodeIterator_operatorLessThan(Handle, it.CvPtr, out var ret));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(it);
 
         return ret != 0;

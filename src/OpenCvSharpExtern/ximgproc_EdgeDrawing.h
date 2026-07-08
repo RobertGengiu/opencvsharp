@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #ifndef NO_CONTRIB
 
@@ -33,163 +33,149 @@ struct CvEdgeDrawingParams
 
 CVAPI(ExceptionStatus) ximgproc_Ptr_EdgeDrawing_delete(cv::Ptr<cv::ximgproc::EdgeDrawing> *obj)
 {
-    BEGIN_WRAP
-    delete obj;
-    END_WRAP
+    return cvTry([&] {
+        delete obj;
+    });
 }
 
-CVAPI(ExceptionStatus) ximgproc_Ptr_EdgeDrawing_get(
-    cv::Ptr<cv::ximgproc::EdgeDrawing> *ptr, cv::ximgproc::EdgeDrawing **returnValue)
+CVAPI(ExceptionStatus) ximgproc_Ptr_EdgeDrawing_get(cv::Ptr<cv::ximgproc::EdgeDrawing> *ptr, cv::ximgproc::EdgeDrawing **returnValue)
 {
-    BEGIN_WRAP
-    *returnValue = ptr->get();
-    END_WRAP
+    return cvTry([&] {
+        *returnValue = ptr->get();
+    });
 }
 
-CVAPI(ExceptionStatus) ximgproc_createEdgeDrawing(
-    cv::Ptr<cv::ximgproc::EdgeDrawing> **returnValue)
+CVAPI(ExceptionStatus) ximgproc_createEdgeDrawing(cv::Ptr<cv::ximgproc::EdgeDrawing> **returnValue)
 {
-    BEGIN_WRAP
-    const auto ptr = cv::ximgproc::createEdgeDrawing();
-    *returnValue = new cv::Ptr<cv::ximgproc::EdgeDrawing>(ptr);
-    END_WRAP
+    return cvTry([&] {
+        const auto ptr = cv::ximgproc::createEdgeDrawing();
+        *returnValue = new cv::Ptr<cv::ximgproc::EdgeDrawing>(ptr);
+    });
 }
 
 
-CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_detectEdges(
-    cv::ximgproc::EdgeDrawing *obj, cv::_InputArray *src)
+CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_detectEdges(cv::ximgproc::EdgeDrawing *obj, const interop::InputArrayProxy* src)
 {
-    BEGIN_WRAP
-    obj->detectEdges(*src);
-    END_WRAP
+    return cvTry([&] {
+        obj->detectEdges(InProxy(*src));
+    });
 }
 
-CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_getEdgeImage(
-    cv::ximgproc::EdgeDrawing *obj, cv::_OutputArray *dst)
+CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_getEdgeImage(cv::ximgproc::EdgeDrawing *obj, const interop::OutputArrayProxy* dst)
 {
-    BEGIN_WRAP
-    obj->getEdgeImage(*dst);
-    END_WRAP
+    return cvTry([&] {
+        obj->getEdgeImage(OutProxy(*dst));
+    });
 }
 
-CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_getGradientImage(
-    cv::ximgproc::EdgeDrawing *obj, cv::_OutputArray *dst)
+CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_getGradientImage(cv::ximgproc::EdgeDrawing *obj, const interop::OutputArrayProxy* dst)
 {
-    BEGIN_WRAP
-    obj->getGradientImage(*dst);
-    END_WRAP
+    return cvTry([&] {
+        obj->getGradientImage(OutProxy(*dst));
+    });
 }
 
-CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_getSegments(
-    cv::ximgproc::EdgeDrawing *obj,
-    std::vector<std::vector<cv::Point>> *returnValue)
+CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_getSegments(cv::ximgproc::EdgeDrawing *obj, std::vector<std::vector<cv::Point>> *returnValue)
 {
-    BEGIN_WRAP
-    *returnValue = obj->getSegments();
-    END_WRAP
+    return cvTry([&] {
+        *returnValue = obj->getSegments();
+    });
 }
 
-CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_getSegmentIndicesOfLines(
-    cv::ximgproc::EdgeDrawing *obj, std::vector<int> *returnValue)
+CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_getSegmentIndicesOfLines(cv::ximgproc::EdgeDrawing *obj, std::vector<int> *returnValue)
 {
-    BEGIN_WRAP
-    *returnValue = obj->getSegmentIndicesOfLines();
-    END_WRAP
+    return cvTry([&] {
+        *returnValue = obj->getSegmentIndicesOfLines();
+    });
 }
 
-CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_detectLines(
-    cv::ximgproc::EdgeDrawing *obj, cv::_OutputArray *lines)
+CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_detectLines(cv::ximgproc::EdgeDrawing *obj, const interop::OutputArrayProxy* lines)
 {
-    BEGIN_WRAP
-    obj->detectLines(*lines);
-    END_WRAP
+    return cvTry([&] {
+        obj->detectLines(OutProxy(*lines));
+    });
 }
 
-CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_detectLines_vector(
-    cv::ximgproc::EdgeDrawing *obj, std::vector<cv::Vec4f> *lines)
+CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_detectLines_vector(cv::ximgproc::EdgeDrawing *obj, std::vector<cv::Vec4f> *lines)
 {
-    BEGIN_WRAP
-    obj->detectLines(*lines);
-    END_WRAP
+    return cvTry([&] {
+        obj->detectLines(*lines);
+    });
 }
 
-CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_detectEllipses(
-    cv::ximgproc::EdgeDrawing *obj, cv::_OutputArray *ellipses)
+CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_detectEllipses(cv::ximgproc::EdgeDrawing *obj, const interop::OutputArrayProxy* ellipses)
 {
-    BEGIN_WRAP
-    obj->detectEllipses(*ellipses);
-    END_WRAP
+    return cvTry([&] {
+        obj->detectEllipses(OutProxy(*ellipses));
+    });
 }
 
-CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_detectEllipses_vector(
-    cv::ximgproc::EdgeDrawing *obj, std::vector<cv::Vec6d> *ellipses)
+CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_detectEllipses_vector(cv::ximgproc::EdgeDrawing *obj, std::vector<cv::Vec6d> *ellipses)
 {
-    BEGIN_WRAP
-    obj->detectEllipses(*ellipses);
-    END_WRAP
+    return cvTry([&] {
+        obj->detectEllipses(*ellipses);
+    });
 }
 
-CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_getParams(
-    cv::ximgproc::EdgeDrawing *obj, CvEdgeDrawingParams *returnValue)
+CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_getParams(cv::ximgproc::EdgeDrawing *obj, CvEdgeDrawingParams *returnValue)
 {
-    BEGIN_WRAP
-    const auto &p = obj->params;
-    returnValue->PFmode                      = p.PFmode ? 1 : 0;
-    returnValue->EdgeDetectionOperator       = p.EdgeDetectionOperator;
-    returnValue->GradientThresholdValue      = p.GradientThresholdValue;
-    returnValue->AnchorThresholdValue        = p.AnchorThresholdValue;
-    returnValue->ScanInterval                = p.ScanInterval;
-    returnValue->MinPathLength               = p.MinPathLength;
-    returnValue->Sigma                       = p.Sigma;
-    returnValue->SumFlag                     = p.SumFlag ? 1 : 0;
-    returnValue->NFAValidation               = p.NFAValidation ? 1 : 0;
-    returnValue->MinLineLength               = p.MinLineLength;
-    returnValue->MaxDistanceBetweenTwoLines  = p.MaxDistanceBetweenTwoLines;
-    returnValue->LineFitErrorThreshold       = p.LineFitErrorThreshold;
-    returnValue->MaxErrorThreshold           = p.MaxErrorThreshold;
-    END_WRAP
+    return cvTry([&] {
+        const auto &p = obj->params;
+        returnValue->PFmode                      = p.PFmode ? 1 : 0;
+        returnValue->EdgeDetectionOperator       = p.EdgeDetectionOperator;
+        returnValue->GradientThresholdValue      = p.GradientThresholdValue;
+        returnValue->AnchorThresholdValue        = p.AnchorThresholdValue;
+        returnValue->ScanInterval                = p.ScanInterval;
+        returnValue->MinPathLength               = p.MinPathLength;
+        returnValue->Sigma                       = p.Sigma;
+        returnValue->SumFlag                     = p.SumFlag ? 1 : 0;
+        returnValue->NFAValidation               = p.NFAValidation ? 1 : 0;
+        returnValue->MinLineLength               = p.MinLineLength;
+        returnValue->MaxDistanceBetweenTwoLines  = p.MaxDistanceBetweenTwoLines;
+        returnValue->LineFitErrorThreshold       = p.LineFitErrorThreshold;
+        returnValue->MaxErrorThreshold           = p.MaxErrorThreshold;
+    });
 }
 
-CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_setParams(
-    cv::ximgproc::EdgeDrawing *obj, CvEdgeDrawingParams *params)
+CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_setParams(cv::ximgproc::EdgeDrawing *obj, CvEdgeDrawingParams *params)
 {
-    BEGIN_WRAP
-    cv::ximgproc::EdgeDrawing::Params p;
-    p.PFmode                     = params->PFmode != 0;
-    p.EdgeDetectionOperator      = params->EdgeDetectionOperator;
-    p.GradientThresholdValue     = params->GradientThresholdValue;
-    p.AnchorThresholdValue       = params->AnchorThresholdValue;
-    p.ScanInterval               = params->ScanInterval;
-    p.MinPathLength              = params->MinPathLength;
-    p.Sigma                      = params->Sigma;
-    p.SumFlag                    = params->SumFlag != 0;
-    p.NFAValidation              = params->NFAValidation != 0;
-    p.MinLineLength              = params->MinLineLength;
-    p.MaxDistanceBetweenTwoLines = params->MaxDistanceBetweenTwoLines;
-    p.LineFitErrorThreshold      = params->LineFitErrorThreshold;
-    p.MaxErrorThreshold          = params->MaxErrorThreshold;
-    obj->setParams(p);
-    END_WRAP
+    return cvTry([&] {
+        cv::ximgproc::EdgeDrawing::Params p;
+        p.PFmode                     = params->PFmode != 0;
+        p.EdgeDetectionOperator      = params->EdgeDetectionOperator;
+        p.GradientThresholdValue     = params->GradientThresholdValue;
+        p.AnchorThresholdValue       = params->AnchorThresholdValue;
+        p.ScanInterval               = params->ScanInterval;
+        p.MinPathLength              = params->MinPathLength;
+        p.Sigma                      = params->Sigma;
+        p.SumFlag                    = params->SumFlag != 0;
+        p.NFAValidation              = params->NFAValidation != 0;
+        p.MinLineLength              = params->MinLineLength;
+        p.MaxDistanceBetweenTwoLines = params->MaxDistanceBetweenTwoLines;
+        p.LineFitErrorThreshold      = params->LineFitErrorThreshold;
+        p.MaxErrorThreshold          = params->MaxErrorThreshold;
+        obj->setParams(p);
+    });
 }
 
 CVAPI(ExceptionStatus) ximgproc_EdgeDrawing_Params_default(CvEdgeDrawingParams *returnValue)
 {
-    BEGIN_WRAP
-    cv::ximgproc::EdgeDrawing::Params p;
-    returnValue->PFmode                     = p.PFmode ? 1 : 0;
-    returnValue->EdgeDetectionOperator      = p.EdgeDetectionOperator;
-    returnValue->GradientThresholdValue     = p.GradientThresholdValue;
-    returnValue->AnchorThresholdValue       = p.AnchorThresholdValue;
-    returnValue->ScanInterval               = p.ScanInterval;
-    returnValue->MinPathLength              = p.MinPathLength;
-    returnValue->Sigma                      = p.Sigma;
-    returnValue->SumFlag                    = p.SumFlag ? 1 : 0;
-    returnValue->NFAValidation              = p.NFAValidation ? 1 : 0;
-    returnValue->MinLineLength              = p.MinLineLength;
-    returnValue->MaxDistanceBetweenTwoLines = p.MaxDistanceBetweenTwoLines;
-    returnValue->LineFitErrorThreshold      = p.LineFitErrorThreshold;
-    returnValue->MaxErrorThreshold          = p.MaxErrorThreshold;
-    END_WRAP
+    return cvTry([&] {
+        cv::ximgproc::EdgeDrawing::Params p;
+        returnValue->PFmode                     = p.PFmode ? 1 : 0;
+        returnValue->EdgeDetectionOperator      = p.EdgeDetectionOperator;
+        returnValue->GradientThresholdValue     = p.GradientThresholdValue;
+        returnValue->AnchorThresholdValue       = p.AnchorThresholdValue;
+        returnValue->ScanInterval               = p.ScanInterval;
+        returnValue->MinPathLength              = p.MinPathLength;
+        returnValue->Sigma                      = p.Sigma;
+        returnValue->SumFlag                    = p.SumFlag ? 1 : 0;
+        returnValue->NFAValidation              = p.NFAValidation ? 1 : 0;
+        returnValue->MinLineLength              = p.MinLineLength;
+        returnValue->MaxDistanceBetweenTwoLines = p.MaxDistanceBetweenTwoLines;
+        returnValue->LineFitErrorThreshold      = p.LineFitErrorThreshold;
+        returnValue->MaxErrorThreshold          = p.MaxErrorThreshold;
+    });
 }
 
 #endif // NO_CONTRIB

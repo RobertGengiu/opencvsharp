@@ -2,40 +2,60 @@ name: Publish NuGet
 
 on:
   workflow_dispatch:
+    inputs:
+      keep_beta:
+        description: "Publish with the -beta suffix kept (pre-release)"
+        type: boolean
+        default: false
+      skip_platforms:
+        description: "Comma-separated platforms to skip (linux-arm64, macos, wasm, manylinux)"
+        type: string
+        default: ""
 
 jobs:
   Prepare:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Download windows artifact
-        uses: dawidd6/action-download-artifact@v19
+        uses: dawidd6/action-download-artifact@v21
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: windows.yml
           name: packages_windows
           branch: ${{ github.ref_name }}
 
-      - name: Download ubuntu arm artifact
-        uses: dawidd6/action-download-artifact@v19
+      - name: Download windows arm64 artifact
+        uses: dawidd6/action-download-artifact@v21
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
-          workflow: linux-arm.yml
-          name: artifacts_linux_arm
+          workflow: windows.yml
+          name: packages_windows_arm64
           branch: ${{ github.ref_name }}
 
-      #- name: Download macos artifact
-      #  uses: dawidd6/action-download-artifact@v19
-      #  with:
-      #    github_token: ${{secrets.GITHUB_TOKEN}}
-      #    workflow: macos10.yml
-      #    name: artifacts_macos_10
-      #    branch: ${{ github.ref_name }}
+      - name: Download ubuntu arm64 artifact
+        if: ${{ !contains(inputs.skip_platforms, 'linux-arm64') }}
+        uses: dawidd6/action-download-artifact@v21
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          workflow: linux-arm64.yml
+          name: artifacts_linux_arm64
+          branch: ${{ github.ref_name }}
+
+      - name: Download macos artifact
+        if: ${{ !contains(inputs.skip_platforms, 'macos') }}
+        uses: dawidd6/action-download-artifact@v21
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          workflow: macos.yml
+          name: nuget-packages-macos
+          branch: ${{ github.ref_name }}
 
       - name: Download wasm artifact
-        uses: dawidd6/action-download-artifact@v19
+        if: ${{ !contains(inputs.skip_platforms, 'wasm') }}
+        uses: dawidd6/action-download-artifact@v21
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: wasm.yml
@@ -43,7 +63,8 @@ jobs:
           branch: ${{ github.ref_name }}
 
       - name: Download manylinux artifact
-        uses: dawidd6/action-download-artifact@v19
+        if: ${{ !contains(inputs.skip_platforms, 'manylinux') }}
+        uses: dawidd6/action-download-artifact@v21
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: manylinux.yml
@@ -53,34 +74,120 @@ jobs:
       - run: |
           ls -l
 
-      - name: Validate windows slim packages exist
+      - name: Validate expected packages exist
+        env:
+          SKIP_PLATFORMS: ${{ inputs.skip_platforms }}
         run: |
           set -euo pipefail
 
-          runtime_count=$(find "$PWD" -type f -name "OpenCvSharp4.runtime.win.slim*.nupkg" | wc -l)
-          windows_slim_count=$(find "$PWD" -type f -name "OpenCvSharp4.Windows.Slim*.nupkg" | wc -l)
+          failed=0
+          check_package() {
+            local pattern="$1"
+            local count
+            count=$(find "$PWD" -maxdepth 4 -type f -name "${pattern}" | wc -l)
+            if [ "$count" -eq 0 ]; then
+              echo "MISSING: $pattern"
+              failed=$((failed + 1))
+            else
+              echo "OK: $pattern"
+            fi
+          }
 
-          if [ "$runtime_count" -eq 0 ] || [ "$windows_slim_count" -eq 0 ]; then
-            echo "Expected Windows slim NuGet packages were not found in downloaded artifacts."
-            echo "runtime.win.slim count: $runtime_count"
-            echo "Windows.Slim count: $windows_slim_count"
-            echo "Detected .nupkg files:"
+          skip_has() {
+            case ",${SKIP_PLATFORMS}," in
+              *",$1,"*) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          check_package "OpenCvSharp5.5.*.nupkg"
+          check_package "OpenCvSharp5.GdipExtensions.*.nupkg"
+          check_package "OpenCvSharp5.WpfExtensions.*.nupkg"
+          check_package "OpenCvSharp5.runtime.win.[0-9]*.nupkg"
+          check_package "OpenCvSharp5.runtime.win-arm64.[0-9]*.nupkg"
+          check_package "OpenCvSharp5.runtime.win-arm64.slim.*.nupkg"
+          check_package "OpenCvSharp5.runtime.win.slim.*.nupkg"
+          check_package "OpenCvSharp5.Windows.[0-9]*.nupkg"
+          check_package "OpenCvSharp5.Windows.Slim.*.nupkg"
+
+          if skip_has linux-arm64; then
+            echo "skip_platforms: skipping linux-arm64 package checks"
+          else
+            check_package "OpenCvSharp5.runtime.linux-arm.*.nupkg"
+            check_package "OpenCvSharp5.runtime.linux-arm64.*.nupkg"
+          fi
+
+          if skip_has wasm; then
+            echo "skip_platforms: skipping wasm package checks"
+          else
+            check_package "OpenCvSharp5.runtime.wasm.*.nupkg"
+          fi
+
+          if skip_has manylinux; then
+            echo "skip_platforms: skipping manylinux package checks"
+          else
+            check_package "OpenCvSharp5.official.runtime.linux-x64.[0-9]*.nupkg"
+            check_package "OpenCvSharp5.official.runtime.linux-x64.slim.*.nupkg"
+          fi
+
+          if skip_has macos; then
+            echo "skip_platforms: skipping macos package checks"
+          else
+            check_package "OpenCvSharp5.runtime.osx.x64.*.nupkg"
+            check_package "OpenCvSharp5.runtime.osx.arm64.*.nupkg"
+          fi
+
+          if [ "$failed" -gt 0 ]; then
+            echo ""
+            echo "ERROR: $failed expected package(s) not found. Detected .nupkg files:"
             find "$PWD" -maxdepth 4 -type f -name "*.nupkg" -print
             exit 1
           fi
 
-      - name: Install .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: 8.0.x
-
-      - name: Rename
+      - name: Strip beta suffix from packages
+        if: ${{ !inputs.keep_beta }}
         run: |
-          for f in $(find $PWD -maxdepth 1 -regex ".+\.s?nupkg"); do
-            dotnet run --project src/tools/OpenCvSharp.NupkgBetaRemover --configuration Release -- "$f"
+          set -euo pipefail
+          shopt -s nullglob
+
+          for f in *.nupkg *.snupkg; do
+            case "$f" in
+              *-beta*) ;;
+              *) continue ;;
+            esac
+
+            if ! [[ "$f" =~ ^OpenCvSharp5\..*[0-9]{8}-beta[0-9]*\.s?nupkg$ ]]; then
+              echo "ERROR: Unexpected -beta package file name: $f"
+              exit 1
+            fi
+
+            tmpdir=$(mktemp -d)
+            nuspec_entry=$(unzip -Z1 "$f" | grep '\.nuspec$' || true)
+            if [ -n "$nuspec_entry" ]; then
+              nuspec_local="$tmpdir/$(basename "$nuspec_entry")"
+              unzip -p "$f" "$nuspec_entry" > "$nuspec_local"
+
+              # Strip -beta / -betaN from the package's own <version>
+              sed -i -E 's/-beta-?[0-9]*(<\/version>)/\1/' "$nuspec_local"
+
+              # Strip -beta / -betaN from dependency version references (meta-packages), except ubuntu/manylinux ones
+              case "$f" in
+                *ubuntu*) ;;
+                *) sed -i -E 's/(version="[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{8})-beta-?[0-9]*/\1/g' "$nuspec_local" ;;
+              esac
+
+              # Replace the existing .nuspec entry in place without touching the rest of the archive
+              zip -q -d "$f" "$nuspec_entry"
+              zip -q -j "$f" "$nuspec_local"
+            fi
+            rm -rf "$tmpdir"
+
+            newname=$(echo "$f" | sed -E 's/-beta-?[0-9]*//')
+            mv "$f" "$newname"
           done
 
       - name: Verify no beta versions remain
+        if: ${{ !inputs.keep_beta }}
         run: |
           if find . -maxdepth 1 -name "*-beta*" -type f | grep -q .; then
             echo "ERROR: beta packages still exist after rename"
@@ -106,7 +213,7 @@ jobs:
           echo "**Total:** $(find . -maxdepth 1 -name '*.nupkg' | wc -l) nupkg, $(find . -maxdepth 1 -name '*.snupkg' | wc -l) snupkg" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload release packages
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: release-packages
           path: |
@@ -121,7 +228,7 @@ jobs:
 
     steps:
       - name: Download release packages
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: release-packages
 
@@ -142,7 +249,7 @@ jobs:
             name=$(basename "$file")
             local output
             if output=$(dotnet nuget push "$file" \
-                --skip-duplicate \                
+                --skip-duplicate \
                 --force-english-output \
                 -k ${{secrets.NUGET_ORG_API_KEY}} \
                 -s https://api.nuget.org/v3/index.json 2>&1); then

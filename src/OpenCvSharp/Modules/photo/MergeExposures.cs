@@ -1,4 +1,4 @@
-﻿using OpenCvSharp.Internal;
+using OpenCvSharp.Internal;
 
 namespace OpenCvSharp;
 
@@ -20,28 +20,20 @@ public abstract class MergeExposures : Algorithm
     /// <param name="response"> 256x1 matrix with inverse camera response function for each pixel value, it should have the same number of channels as images.</param>
     public virtual void Process(IEnumerable<Mat> src, OutputArray dst, IEnumerable<float> times, InputArray response)
     {
-        if (src is null)
-            throw new ArgumentNullException(nameof(src));
-        if (dst is null)
-            throw new ArgumentNullException(nameof(dst));
-        if (times is null)
-            throw new ArgumentNullException(nameof(times));
-        if (response is null)
-            throw new ArgumentNullException(nameof(response));
-        dst.ThrowIfNotReady();
+        ArgumentNullException.ThrowIfNull(src);
+        ArgumentNullException.ThrowIfNull(times);
 
         var srcArray = src.Select(s => s.CvPtr).ToArray();
         var timesArray = times as float[] ?? times.ToArray();
         if (srcArray.Length != timesArray.Length)
             throw new OpenCvSharpException("src.Count() != times.Count");
             
-        NativeMethods.photo_MergeExposures_process(RawPtr, srcArray, srcArray.Length, dst.CvPtr, timesArray, response.CvPtr);
+        NativeMethods.HandleException(
+            NativeMethods.photo_MergeExposures_process(Handle, srcArray, srcArray.Length, dst.Proxy, timesArray, response.Proxy));
 
-        dst.Fix();
-        GC.KeepAlive(this);
         GC.KeepAlive(src);
-        GC.KeepAlive(dst);
-        GC.KeepAlive(response);
+        GC.KeepAlive(dst.Source);
+        GC.KeepAlive(response.Source);
         GC.KeepAlive(srcArray);
         GC.KeepAlive(timesArray);
     }

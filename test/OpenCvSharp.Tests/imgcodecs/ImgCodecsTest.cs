@@ -1,16 +1,7 @@
-﻿using System.Runtime.InteropServices;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.Formats.Bmp;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.Formats.Tiff;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
+using System.Runtime.InteropServices;
+using BitMiracle.LibTiff.Classic;
+using SkiaSharp;
 using Xunit;
-using Color = SixLabors.ImageSharp.Color;
-using Image = SixLabors.ImageSharp.Image;
 
 #pragma warning disable CA1031
 
@@ -83,12 +74,12 @@ public class ImgCodecsTest : TestBase
 
         // Create test data
         {
-            using var image = new Image<Bgr24>(10, 10);
-            image.Mutate(x =>
-            {
-                x.Fill(Color.Red);
-            });
-            image.SaveAsPng(fileName);
+            using var bitmap = new SKBitmap(10, 10);
+            bitmap.Erase(SKColors.Red);
+            using var image = SKImage.FromBitmap(bitmap);
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            using var fs = File.Create(fileName);
+            data.SaveTo(fs);
         }
 
         Assert.True(File.Exists(fileName), $"File '{fileName}' not found");
@@ -98,8 +89,8 @@ public class ImgCodecsTest : TestBase
         Assert.False(mat.Empty());
     }
 
-    // TODO Windows not supported?
-    // https://github.com/opencv/opencv/issues/4242
+    // Unicode (incl. non-ANSI) paths now work on every platform: the native side reads via a wide
+    // path on Windows. (Formerly unsupported on Windows; opencv #4242.)
     [Fact]
     public void ImReadUnicodeFileName()
     {
@@ -107,23 +98,82 @@ public class ImgCodecsTest : TestBase
 
         CreateDummyImageFile(fileName);
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        using var image = Cv2.ImRead(fileName);
+        Assert.NotNull(image);
+        Assert.False(image.Empty());
+    }
+
+    // --- Edge cases for the Windows non-ANSI (wide-path) route: gating, mmap decode and its fallbacks ---
+
+    [Fact]
+    public void ImReadWriteUnicodeRoundTripPixels()
+    {
+        // The wide-path encode/write and mmap decode must produce byte-identical pixels (PNG is lossless).
+        const string fileName = "_data/image/roundtrip♥😀.png";
+        try
         {
-            // TODO
-            // Cannot marshal: Encountered unmappable character.
-            // at System.Runtime.InteropServices.Marshal.StringToAnsiString(String s, Byte * buffer, Int32 bufferLength, Boolean bestFit, Boolean throwOnUnmappableChar)
-            Assert.Throws<ArgumentException>(() =>
-            {
-                using var image = Cv2.ImRead(fileName);
-                //Assert.NotNull(image);
-                //Assert.False(image.Empty());
-            });
+            using var src = new Mat(10, 20, MatType.CV_8UC3, Scalar.Blue);
+            src.Set(3, 5, new Vec3b(10, 20, 30));
+            src.Set(9, 19, new Vec3b(200, 100, 50));
+
+            Assert.True(Cv2.ImWrite(fileName, src));
+            Assert.True(File.Exists(fileName), $"File '{fileName}' not found");
+
+            using var dst = Cv2.ImRead(fileName, ImreadModes.Color);
+            Assert.False(dst.Empty());
+            Assert.Equal(src.Rows, dst.Rows);
+            Assert.Equal(src.Cols, dst.Cols);
+            Assert.Equal(src.At<Vec3b>(0, 0), dst.At<Vec3b>(0, 0));
+            Assert.Equal(src.At<Vec3b>(3, 5), dst.At<Vec3b>(3, 5));
+            Assert.Equal(src.At<Vec3b>(9, 19), dst.At<Vec3b>(9, 19));
         }
-        else
+        finally
         {
+            if (File.Exists(fileName)) File.Delete(fileName);
+        }
+    }
+
+    [Fact]
+    public void ImReadUnicodeEmptyFileReturnsEmpty()
+    {
+        // 0-byte file with a non-ANSI name: mapping is skipped and the fallback yields an empty Mat (no crash).
+        const string fileName = "_data/image/empty♡😄.png";
+        try
+        {
+            File.WriteAllBytes(fileName, Array.Empty<byte>());
             using var image = Cv2.ImRead(fileName);
             Assert.NotNull(image);
-            Assert.False(image.Empty());
+            Assert.True(image.Empty());
+        }
+        finally
+        {
+            if (File.Exists(fileName)) File.Delete(fileName);
+        }
+    }
+
+    [Fact]
+    public void ImReadUnicodeMissingFileReturnsEmpty()
+    {
+        using var image = Cv2.ImRead("_data/image/does_not_exist♥😀.png");
+        Assert.NotNull(image);
+        Assert.True(image.Empty());
+    }
+
+    [Fact]
+    public void HaveImageReaderUnicodeNonImageIsFalse()
+    {
+        // Non-ANSI name with a .png extension but non-image content -> not decodable.
+        const string fileName = "_data/image/notimage♥😀.png";
+        try
+        {
+            File.WriteAllText(fileName, "this is not an image");
+            Assert.False(Cv2.HaveImageReader(fileName));
+            using var image = Cv2.ImRead(fileName);
+            Assert.True(image.Empty());
+        }
+        finally
+        {
+            if (File.Exists(fileName)) File.Delete(fileName);
         }
     }
 
@@ -141,9 +191,9 @@ public class ImgCodecsTest : TestBase
             Cv2.ImWrite(fileName, mat);
         }
 
-        var imageInfo = Image.Identify(fileName);
-        Assert.Equal(10, imageInfo.Height);
-        Assert.Equal(20, imageInfo.Width);
+        var (width, height) = IdentifyImage(fileName);
+        Assert.Equal(10, height);
+        Assert.Equal(20, width);
     }
 
     //[LinuxOnlyFact]
@@ -168,14 +218,13 @@ public class ImgCodecsTest : TestBase
 
         Assert.True(File.Exists(fileName), $"File '{fileName}' not found");
 
-        var imageInfo = Image.Identify(fileName);
-        Assert.Equal(10, imageInfo.Height);
-        Assert.Equal(20, imageInfo.Width);
+        var (width, height) = IdentifyImage(fileName);
+        Assert.Equal(10, height);
+        Assert.Equal(20, width);
     }
 
-    // TODO
-    // https://github.com/opencv/opencv/issues/4242
-    //[PlatformSpecificFact("Linux")]
+    // Unicode (incl. non-ANSI) paths now work on every platform: the native side writes via a wide
+    // path on Windows. (Formerly unsupported on Windows; opencv #4242.)
     [Fact]
     public void ImWriteUnicodeFileName()
     {
@@ -187,20 +236,9 @@ public class ImgCodecsTest : TestBase
 
         using (var mat = new Mat(10, 20, MatType.CV_8UC3, Scalar.Blue))
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                // TODO
-                // Cannot marshal: Encountered unmappable character.
-                // at System.Runtime.InteropServices.Marshal.StringToAnsiString(String s, Byte * buffer, Int32 bufferLength, Boolean bestFit, Boolean throwOnUnmappableChar)
-                Assert.Throws<ArgumentException>(() => { Cv2.ImWrite(fileName, mat); });
-                return;
-            }
-            else
-            {
-                Cv2.ImWrite(fileName, mat);
-            }
+            Cv2.ImWrite(fileName, mat);
         }
-        
+
         var file = new FileInfo(fileName);
         Assert.True(file.Exists, $"File '{fileName}' not found");
         Assert.True(file.Length > 0, $"File size of '{fileName}' == 0");
@@ -212,10 +250,10 @@ public class ImgCodecsTest : TestBase
         if (File.Exists(asciiFileName)) File.Delete(asciiFileName);
         File.Move(fileName, asciiFileName);
 #endif
-        var imageInfo = Image.Identify(asciiFileName);
+        var (width, height) = IdentifyImage(asciiFileName);
 
-        Assert.Equal(10, imageInfo.Height);
-        Assert.Equal(20, imageInfo.Width);
+        Assert.Equal(10, height);
+        Assert.Equal(20, width);
     }
 
     [Theory]
@@ -290,17 +328,9 @@ public class ImgCodecsTest : TestBase
         {
             CreateDummyImageFile(path);
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                // TODO
-                // Cannot marshal: Encountered unmappable character.
-                // at System.Runtime.InteropServices.Marshal.StringToAnsiString(String s, Byte * buffer, Int32 bufferLength, Boolean bestFit, Boolean throwOnUnmappableChar)
-                Assert.Throws<ArgumentException>(() => { Cv2.HaveImageReader(path); });
-            }
-            else
-            {
-                Assert.True(Cv2.HaveImageReader(path));
-            }
+            // Unicode (incl. non-ANSI) paths now work on every platform (native probes via a wide
+            // path on Windows; formerly unsupported there, opencv #4242).
+            Assert.True(Cv2.HaveImageReader(path));
         }
         finally
         {
@@ -348,20 +378,9 @@ public class ImgCodecsTest : TestBase
         // This file does not have to exist
         const string fileName = "♥♡😀😄.png";
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            // TODO
-            // Cannot marshal: Encountered unmappable character.
-            // at System.Runtime.InteropServices.Marshal.StringToAnsiString(String s, Byte * buffer, Int32 bufferLength, Boolean bestFit, Boolean throwOnUnmappableChar)
-            Assert.Throws<ArgumentException>(() =>
-            {
-                Cv2.HaveImageWriter(fileName);
-            });
-        }
-        else
-        {
-            Assert.True(Cv2.HaveImageWriter(fileName));
-        }
+        // HaveImageWriter only inspects the file extension, which survives ANSI marshalling intact,
+        // so it reports the writer as available even though the Unicode base name is mangled.
+        Assert.True(Cv2.HaveImageWriter(fileName));
     }
 
     [Theory]
@@ -377,10 +396,10 @@ public class ImgCodecsTest : TestBase
         Cv2.ImEncode(ext, mat, out var imageData);
         Assert.NotNull(imageData);
 
-        // Can ImageSharp decode the imageData?
-        using var image = Image.Load(imageData);
-        Assert.Equal(mat.Rows, image.Height);
-        Assert.Equal(mat.Cols, image.Width);
+        // Can an independent decoder read the imageData?
+        var (width, height) = IdentifyImageBytes(imageData, ext);
+        Assert.Equal(mat.Rows, height);
+        Assert.Equal(mat.Cols, width);
     }
 
     [Theory]
@@ -390,26 +409,27 @@ public class ImgCodecsTest : TestBase
     [InlineData("Bmp")]
     public void ImDecode(string imageFormatName)
     {
-        IImageEncoder encoder = imageFormatName switch
+        // Tiff/Bmp: SkiaSharp cannot encode these formats, so we use pre-generated fixture
+        // files (produced once from mandrill.png by an independent encoder) instead.
+        var imageData = imageFormatName switch
         {
-            "Png" => new PngEncoder(),
-            "Jpeg" => new JpegEncoder(),
-            "Tiff" => new TiffEncoder(),
-            "Bmp" => new BmpEncoder(),
+            "Png" => EncodeWithSkia("_data/image/mandrill.png", SKEncodedImageFormat.Png),
+            "Jpeg" => EncodeWithSkia("_data/image/mandrill.png", SKEncodedImageFormat.Jpeg),
+            "Tiff" => File.ReadAllBytes("_data/image/mandrill.tif"),
+            "Bmp" => File.ReadAllBytes("_data/image/mandrill.bmp"),
             _ => throw new ArgumentOutOfRangeException(nameof(imageFormatName), imageFormatName, null)
         };
-
-        using var image = Image.Load("_data/image/mandrill.png");
-        using var stream = new MemoryStream();
-        image.Save(stream, encoder);
-        var imageData = stream.ToArray();
         Assert.NotNull(imageData);
+
+        using var codec = SKCodec.Create("_data/image/mandrill.png");
+        var referenceWidth = codec.Info.Width;
+        var referenceHeight = codec.Info.Height;
 
         using var mat = Cv2.ImDecode(imageData, ImreadModes.Color);
         Assert.NotNull(mat);
         Assert.False(mat.Empty());
-        Assert.Equal(image.Width, mat.Cols);
-        Assert.Equal(image.Height, mat.Rows);
+        Assert.Equal(referenceWidth, mat.Cols);
+        Assert.Equal(referenceHeight, mat.Rows);
 
         ShowImagesWhenDebugMode(mat);
     }
@@ -488,13 +508,14 @@ public class ImgCodecsTest : TestBase
 
         var tempFileName = Path.GetTempFileName();
         {
-            
-            using var image = new Image<Bgr24>(10, 10);
-            image.Mutate(x =>
+            using var bitmap = new SKBitmap(10, 10);
+            bitmap.Erase(SKColors.Red);
+            using var image = SKImage.FromBitmap(bitmap);
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            using (var fs = File.Create(tempFileName))
             {
-                x.Fill(Color.Red);
-            });
-            image.SaveAsPng(tempFileName);
+                data.SaveTo(fs);
+            }
         }
 
 #if NET48
@@ -507,5 +528,62 @@ public class ImgCodecsTest : TestBase
         File.Move(tempFileName, path, true);
 #endif
         Assert.True(File.Exists(path), $"File '{path}' not found");
+    }
+
+    private static byte[] EncodeWithSkia(string path, SKEncodedImageFormat format)
+    {
+        using var bitmap = SKBitmap.Decode(path) ?? throw new InvalidOperationException($"Cannot decode '{path}'");
+        using var image = SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(format, 100);
+        return data.ToArray();
+    }
+
+    // Reads only Width/Height metadata via an independent decoder (SkiaSharp for
+    // png/jpg/bmp, LibTiff.NET for tiff, since SkiaSharp does not support tiff).
+    private static bool IsTiffExtension(string ext) =>
+        ext.Equals(".tif", StringComparison.OrdinalIgnoreCase) || ext.Equals(".tiff", StringComparison.OrdinalIgnoreCase);
+
+    private static (int Width, int Height) IdentifyImage(string path)
+    {
+        if (IsTiffExtension(Path.GetExtension(path)))
+        {
+            using var tiff = Tiff.Open(path, "r") ?? throw new InvalidOperationException($"Cannot open '{path}'");
+            return (tiff.GetField(TiffTag.IMAGEWIDTH)[0].ToInt(), tiff.GetField(TiffTag.IMAGELENGTH)[0].ToInt());
+        }
+
+        using var codec = SKCodec.Create(path);
+        return (codec.Info.Width, codec.Info.Height);
+    }
+
+    private static (int Width, int Height) IdentifyImageBytes(byte[] data, string ext)
+    {
+        if (IsTiffExtension(ext))
+        {
+            using var ms = new MemoryStream(data);
+            using var tiff = Tiff.ClientOpen("in-memory", "r", ms, new ReadOnlyTiffStream())
+                ?? throw new InvalidOperationException("Cannot open TIFF byte data");
+            return (tiff.GetField(TiffTag.IMAGEWIDTH)[0].ToInt(), tiff.GetField(TiffTag.IMAGELENGTH)[0].ToInt());
+        }
+
+        using var memoryStream = new SKMemoryStream(data);
+        using var codec = SKCodec.Create(memoryStream);
+        return (codec.Info.Width, codec.Info.Height);
+    }
+
+    // Read-only adapter so LibTiff.NET can read TIFF data straight from a MemoryStream.
+    private sealed class ReadOnlyTiffStream : TiffStream
+    {
+        public override int Read(object clientData, byte[] buffer, int offset, int count)
+            => ((Stream)clientData).Read(buffer, offset, count);
+
+        public override long Seek(object clientData, long offset, SeekOrigin origin)
+            => ((Stream)clientData).Seek(offset, origin);
+
+        public override void Close(object clientData)
+        {
+            // The caller owns the underlying stream's lifetime.
+        }
+
+        public override long Size(object clientData) => ((Stream)clientData).Length;
     }
 }

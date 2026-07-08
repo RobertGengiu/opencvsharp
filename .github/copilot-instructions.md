@@ -1,48 +1,21 @@
-﻿# Copilot Instructions
+# Copilot Instructions
 
 ## File encoding
 
-All source files in this repository use **UTF-8 with BOM** (`EF BB BF`).
+All text files in this repository use **UTF-8 without a BOM**. This applies to `.cs`, `.csproj`, `.yml`, `.md`, `.json`, `.cpp`, `.h`, and every other text file — there are no exceptions.
 
-When creating or editing files, always save them as UTF-8 with BOM. This applies to `.cs`, `.csproj`, `.yml`, `.md`, `.json`, and all other text files.
+- `.editorconfig` declares `charset = utf-8` (no BOM) for all files, so editors and `dotnet format` enforce this automatically.
+- The `Write` / `create_file` tool already produces UTF-8 without a BOM, so just create and edit files normally — no encoding fix-up step is needed.
+- Do **not** add a BOM, and do not save as ANSI, Shift-JIS, or UTF-16. The repository is English-only (ASCII), and the C++ build sets the UTF-8 source charset, so MSVC reads the sources correctly without a BOM.
 
-**Exception — Linux tooling files: use UTF-8 without BOM.**
-The following file types are processed by Linux tools (Docker, bash, VS Code Dev Containers) that do not tolerate a BOM and must be saved **without** BOM:
-- `Dockerfile` and any file named `*.Dockerfile`
-- Shell scripts (`.sh`)
-- `devcontainer.json` and all files under `.devcontainer/`
-
-Do **not** save files as UTF-8 without BOM, ANSI, or Shift-JIS — doing so will corrupt Japanese content and break Visual Studio / MSBuild tooling (for the files above that require BOM).
-
-### Editing workflow requirement
-
-Maintain correct encoding **during each edit/create step** — do not correct it in a follow-up step.
-
-Do not rely on a final "bulk conversion/check" step at the end of the task.
-
-**Important:** The `create_file` tool does **not** interpret `\uFEFF` in the content string as BOM bytes — it writes the literal six characters `\uFEFF`. Never place `\uFEFF` (or any Unicode escape for U+FEFF) directly in the `content` parameter. Instead, create the file first (BOM-free), then immediately apply the PowerShell conversion command below for files that require BOM.
-
-### Verification
-
-Do not run the verification/conversion commands on every edit by default.
-Prevent encoding issues through edit/create operations that preserve UTF-8 BOM.
-Run the commands below only when preservation cannot be guaranteed or when troubleshooting is required.
-# Check whether a file has UTF-8 BOM
-$b = [System.IO.File]::ReadAllBytes("path\to\file")
-$b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF   # should be True
-
-# Convert a file to UTF-8 with BOM
-$enc = New-Object System.Text.UTF8Encoding $true
-$content = [System.IO.File]::ReadAllText("path\to\file", [System.Text.Encoding]::UTF8)
-[System.IO.File]::WriteAllText("path\to\file", $content, $enc)
 ## NuGet README sync
 
 When editing the root `README.md`, also update the NuGet-specific README files accordingly.
 
 | File | Target packages |
 |---|---|
-| `nuget/README.managed.md` | `OpenCvSharp4`, `OpenCvSharp4.Windows`, `OpenCvSharp4.Windows.Slim`, `OpenCvSharp4.Extensions`, `OpenCvSharp4.WpfExtensions` |
-| `nuget/README.runtime.md` | `OpenCvSharp4.runtime.*`, `OpenCvSharp4.official.runtime.*` (all native runtime packages) |
+| `packaging/nuget/README.managed.md` | `OpenCvSharp4`, `OpenCvSharp4.Windows`, `OpenCvSharp4.Windows.Slim`, `OpenCvSharp4.Extensions`, `OpenCvSharp4.WpfExtensions` |
+| `packaging/nuget/README.runtime.md` | `OpenCvSharp4.runtime.*`, `OpenCvSharp4.official.runtime.*` (all native runtime packages) |
 
 The NuGet READMEs are a subset of the top-level README and consist of the following sections:
 
@@ -132,7 +105,7 @@ public class SomeClass : Algorithm
 
     public virtual void SomeMethod(InputArray src) {
         ThrowIfDisposed();
-        if (src is null) throw new ArgumentNullException(nameof(src));
+        ArgumentNullException.ThrowIfNull(src);
         src.ThrowIfDisposed();
         NativeMethods.HandleException(NativeMethods.<module>_SomeClass_someMethod(RawPtr, src.CvPtr));
         GC.KeepAlive(this);
@@ -172,6 +145,15 @@ public struct SomeClassParams {
 
 From `namespace OpenCvSharp.Internal`, types in `namespace OpenCvSharp` are directly visible (outer scope rule). Types in a sub-namespace such as `namespace OpenCvSharp.XImgProc` are NOT — add an explicit `using` directive in the NativeMethods file when referencing structs defined there.
 
+### Free-function facade naming: `Cv2` mirrors `cv::`
+
+Free functions are exposed as static methods on `Cv2`, mirroring the C++ namespace structure:
+
+- `Cv2` = `cv::` — e.g. `Cv2.CvtColor` ↔ `cv::cvtColor`.
+- `Cv2.<Sub>` (a nested `public static partial class` under `Cv2`) = `cv::<sub>::` — e.g. `Cv2.Dnn.ReadNetFromONNX` ↔ `cv::dnn::readNetFromONNX`, matching the Python `cv2.dnn.*` submodules. In scope: `Dnn`, `Aruco`, `XImgProc`, `XPhoto`, `OptFlow`, `Text`, `Detail`.
+
+Place each submodule facade in its module folder as `Cv2.<Sub>.cs` (e.g. `Modules/dnn/Cv2.Dnn.cs`). The file uses `namespace OpenCvSharp;` and `using OpenCvSharp.<Sub>;` (the wrapper *types* stay in their `OpenCvSharp.<Sub>` namespaces). Where a sub-namespace type name collides with one in `OpenCvSharp` root (e.g. `InpaintTypes`), fully-qualify it in the signature (`OpenCvSharp.XPhoto.InpaintTypes`). Functions that live directly in `cv::` (no sub-namespace, e.g. the shape `Create…` factories) go on `Cv2` itself, not a nested class. The `CvExtensions` *extension methods* (`OpenCvSharp.Extensions`) are not part of this and keep their name.
+
 ### std::vector return values
 
 - `std::vector<std::vector<Point>>` → `VectorOfVectorPoint` (already exists)
@@ -184,3 +166,26 @@ From `namespace OpenCvSharp.Internal`, types in `namespace OpenCvSharp` are dire
 
 See `src/OpenCvSharpExtern/ximgproc_EdgeDrawing.h`, `src/OpenCvSharp/Modules/ximgproc/EdgeDrawing.cs` for a complete example covering: factory, OutputArray methods, std::vector methods, nested Params struct with bool fields, and VectorOfVec6d.
 
+## Repository structure
+
+OpenCvSharp has three layers:
+
+- **`src/OpenCvSharp/`** — managed C# wrapper (P/Invoke, types, extension methods). Built against `net8.0` (`netstandard2.0`/`netstandard2.1`/`net4x` support was dropped); consumers on net8.0 or above (net9.0, net10.0, ...) can reference it.
+- **`src/OpenCvSharpExtern/`** — thin C++ bridge called by the C# side via P/Invoke.
+- **`packaging/nuget/`** — NuGet packaging projects (runtime packages that bundle the native DLLs).
+
+## Versioning and release process
+
+See `docs/release-process.md` for the full release workflow.
+
+**Key rule: do not edit version numbers in source files for routine releases.** The NuGet package version is passed via `-p:Version=...` at pack time in CI. `AssemblyVersion` and `FileVersion` are hardcoded to `5.0.0.0` in `src/Directory.Build.props` and must not be changed for patch or minor OpenCV upgrades — only bump the major component on a breaking API change or OpenCV major-version upgrade. `InformationalVersion` is set automatically by the SDK to the full NuGet version string.
+
+> **Branch note:** `main`/`5.x` targets OpenCV 5.x and publishes the `OpenCvSharp5` package family. The `4.x` branch is frozen on OpenCV 4.13.0 (`OpenCvSharp4` family, `AssemblyVersion 4.0.0.0`); cut 4.x patches from there.
+
+## Native DLL loading
+
+There is no custom native-library loader. Since `src/OpenCvSharp/` requires net8.0 or above, a consumer can never be a .NET Framework (net4x) project (net8.0+-only assemblies aren't referenceable from net4x), so the old `WindowsLibraryLoader`/`Win32Api` classes and their `dll/x64`-folder probing were unreachable and were removed. Native library resolution is handled entirely by the .NET runtime's default probing via the `runtimes/{rid}/native/` layout that the `OpenCvSharp5.runtime.*` NuGet packages provide. If an app needs to load the native DLL from a nonstandard location (e.g. a plugin host that doesn't process `deps.json`), it can call `System.Runtime.InteropServices.NativeLibrary.Load(path)` (or `NativeLibrary.SetDllImportResolver`) itself before the first OpenCvSharp call — no OpenCvSharp-side API is needed for this.
+
+## Issue backlog
+
+`docs/issue-backlog.md` tracks actionable issues identified from closed/stale GitHub issues. Update the checkboxes as items are resolved.

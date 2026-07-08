@@ -1,0 +1,23 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "labels": ["dependencies"],
+  "schedule": ["before 9am on Monday"],
+  "packageRules": [
+    {
+      "description": "Group xunit packages",
+      "matchPackageNames": ["xunit.v3", "xunit.runner.visualstudio", "Xunit.StaFact"],
+      "groupName": "xunit"
+    },
+    {
+      "description": "Group SkiaSharp packages",
+      "matchPackageNames": ["SkiaSharp", "SkiaSharp.NativeAssets.Linux.NoDependencies", "SkiaSharp.NativeAssets.macOS"],
+      "groupName": "SkiaSharp"
+    },
+    {
+      "description": "Group GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-﻿using OpenCvSharp.Internal;
+using OpenCvSharp.Internal;
 using OpenCvSharp.Internal.Vectors;
 
 namespace OpenCvSharp;
@@ -32,8 +32,7 @@ static partial class Cv2
     /// <returns></returns>
     public static bool ImReadMulti(string filename, out Mat[] mats, ImreadModes flags = ImreadModes.AnyColor)
     {
-        if (filename is null) 
-            throw new ArgumentNullException(nameof(filename));
+        ArgumentNullException.ThrowIfNull(filename);
 
         using var matsVec = new VectorOfMat();
         NativeMethods.HandleException(
@@ -53,8 +52,7 @@ static partial class Cv2
     {
         if (string.IsNullOrEmpty(fileName))
             throw new ArgumentNullException(nameof(fileName));
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
+        ArgumentNullException.ThrowIfNull(img);
         prms ??= [];
 
         NativeMethods.HandleException(
@@ -72,8 +70,7 @@ static partial class Cv2
     /// <returns></returns>
     public static bool ImWrite(string fileName, Mat img, params ImageEncodingParam[] prms)
     {
-        if (prms is null)
-            throw new ArgumentNullException(nameof(prms));
+        ArgumentNullException.ThrowIfNull(prms);
         if (prms.Length <= 0) 
             return ImWrite(fileName, img);
 
@@ -97,8 +94,7 @@ static partial class Cv2
     {
         if (string.IsNullOrEmpty(fileName))
             throw new ArgumentNullException(nameof(fileName));
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
+        ArgumentNullException.ThrowIfNull(img);
         prms ??= [];
 
         using var imgVec = new VectorOfMat(img);
@@ -117,8 +113,7 @@ static partial class Cv2
     /// <returns></returns>
     public static bool ImWrite(string fileName, IEnumerable<Mat> img, params ImageEncodingParam[] prms)
     {
-        if (prms is null)
-            throw new ArgumentNullException(nameof(prms));
+        ArgumentNullException.ThrowIfNull(prms);
         if (prms.Length <= 0)
             return ImWrite(fileName, img);
 
@@ -139,8 +134,7 @@ static partial class Cv2
     /// <returns></returns>
     public static Mat ImDecode(Mat buf, ImreadModes flags)
     {
-        if (buf is null)
-            throw new ArgumentNullException(nameof(buf));
+        ArgumentNullException.ThrowIfNull(buf);
         buf.ThrowIfDisposed();
 
         NativeMethods.HandleException(
@@ -157,13 +151,9 @@ static partial class Cv2
     /// <returns></returns>
     public static Mat ImDecode(InputArray buf, ImreadModes flags)
     {
-        if (buf is null)
-            throw new ArgumentNullException(nameof(buf));
-        buf.ThrowIfDisposed();
-
         NativeMethods.HandleException(
-            NativeMethods.imgcodecs_imdecode_InputArray(buf.CvPtr, (int) flags, out var ret));
-        GC.KeepAlive(buf);
+            NativeMethods.imgcodecs_imdecode_InputArray(buf.Proxy, (int) flags, out var ret));
+        GC.KeepAlive(buf.Source);
         return new Mat(ret);
     }
 
@@ -175,8 +165,7 @@ static partial class Cv2
     /// <returns></returns>
     public static Mat ImDecode(byte[] buf, ImreadModes flags)
     {
-        if (buf is null)
-            throw new ArgumentNullException(nameof(buf));
+        ArgumentNullException.ThrowIfNull(buf);
         var ret = ImDecode(new ReadOnlySpan<byte>(buf), flags);
         GC.KeepAlive(buf);
         return ret;
@@ -215,15 +204,12 @@ static partial class Cv2
     {
         if (string.IsNullOrEmpty(ext))
             throw new ArgumentNullException(nameof(ext));
-        if (img is null)
-            throw new ArgumentNullException(nameof(img));
         prms ??= [];
-        img.ThrowIfDisposed();
 
-        using var bufVec = new VectorOfByte();
+        using var bufVec = new StdVector<byte>();
         NativeMethods.HandleException(
-            NativeMethods.imgcodecs_imencode_vector(ext, img.CvPtr, bufVec.CvPtr, prms, prms.Length, out var ret));
-        GC.KeepAlive(img);
+            NativeMethods.imgcodecs_imencode_vector(ext, img.Proxy, bufVec.CvPtr, prms, prms.Length, out var ret));
+        GC.KeepAlive(img.Source);
         buf = bufVec.ToArray();
         return ret != 0;
     }
@@ -237,8 +223,7 @@ static partial class Cv2
     /// <param name="prms">Format-specific parameters.</param>
     public static void ImEncode(string ext, InputArray img, out byte[] buf, params ImageEncodingParam[] prms)
     {
-        if (prms is null)
-            throw new ArgumentNullException(nameof(prms));
+        ArgumentNullException.ThrowIfNull(prms);
         var p = new List<int>();
         foreach (var item in prms)
         {
@@ -255,8 +240,7 @@ static partial class Cv2
     /// <returns></returns>
     public static bool HaveImageReader(string fileName)
     {
-        if (fileName is null) 
-            throw new ArgumentNullException(nameof(fileName));
+        ArgumentNullException.ThrowIfNull(fileName);
 
         NativeMethods.HandleException(
             NativeMethods.imgcodecs_haveImageReader(fileName, out var ret));
@@ -270,8 +254,7 @@ static partial class Cv2
     /// <returns></returns>
     public static bool HaveImageWriter(string fileName)
     {
-        if (fileName is null) 
-            throw new ArgumentNullException(nameof(fileName));
+        ArgumentNullException.ThrowIfNull(fileName);
 
         NativeMethods.HandleException(
             NativeMethods.imgcodecs_haveImageWriter(fileName, out var ret));

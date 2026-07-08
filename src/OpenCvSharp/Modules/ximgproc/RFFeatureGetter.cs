@@ -55,18 +55,15 @@ public class RFFeatureGetter : Algorithm
         int gradNum)
     {
         ThrowIfDisposed();
-        if (src is null)
-            throw new ArgumentNullException(nameof(src));
-        if (features is null)
-            throw new ArgumentNullException(nameof(features));
+        ArgumentNullException.ThrowIfNull(src);
+        ArgumentNullException.ThrowIfNull(features);
         src.ThrowIfDisposed();
         features.ThrowIfDisposed();
             
         NativeMethods.HandleException(
             NativeMethods.ximgproc_RFFeatureGetter_getFeatures(
-                RawPtr, src.CvPtr, features.CvPtr, gnrmRad, gsmthRad, shrink, outNum, gradNum));
+                Handle, src.CvPtr, features.CvPtr, gnrmRad, gsmthRad, shrink, outNum, gradNum));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(src);
         GC.KeepAlive(features);
     }

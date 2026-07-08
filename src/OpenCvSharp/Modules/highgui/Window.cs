@@ -1,6 +1,6 @@
-﻿using System.Runtime.InteropServices;
+using System.Collections.Concurrent;
+using System.Threading;
 using OpenCvSharp.Internal;
-using OpenCvSharp.Internal.Util;
 
 // ReSharper disable UnusedMember.Local
 
@@ -9,19 +9,17 @@ namespace OpenCvSharp;
 /// <summary>
 /// Wrapper of HighGUI window
 /// </summary>
-public class Window : DisposableObject
+public sealed class Window : IDisposable
 {
     #region Field
 
-    internal static Dictionary<string, Window> Windows = new();
-    private static uint windowCount;
+    internal static readonly ConcurrentDictionary<string, Window> Windows = new();
+    private static int windowCount;
 
-    private string name;
+    private readonly string name;
     private Mat? image;
-    private MouseCallback? mouseCallback;
     // ReSharper disable once IdentifierTypo
     private readonly Dictionary<string, CvTrackbar> trackbars;
-    private ScopedGCHandle? callbackHandle;
 
     #endregion
 
@@ -39,91 +37,61 @@ public class Window : DisposableObject
     /// Creates a window
     /// </summary>
     /// <param name="name">Name of the window which is used as window identifier and appears in the window caption. </param>
-    public Window(string name)
-        : this(name, null, WindowFlags.AutoSize)
-    {
-    }
-
-    /// <summary>
-    /// Creates a window
-    /// </summary>
-    /// <param name="name">Name of the window which is used as window identifier and appears in the window caption. </param>
-    /// <param name="flags">Flags of the window. Currently the only supported flag is WindowMode.AutoSize. 
-    /// If it is set, window size is automatically adjusted to fit the displayed image (see cvShowImage), while user can not change the window size manually. </param>
-    public Window(string name, WindowFlags flags = WindowFlags.AutoSize)
-        : this(name, null, flags)
-    {
-    }
-
-    /// <summary>
-    /// Creates a window
-    /// </summary>
-    /// <param name="name">Name of the window which is used as window identifier and appears in the window caption. </param>
     /// <param name="image">Image to be shown.</param>
-    public Window(string name, Mat image)
-        : this(name, image ?? throw new ArgumentNullException(nameof(image)), WindowFlags.AutoSize)
-    {
-    }
-
-    /// <summary>
-    /// Creates a window
-    /// </summary>
-    /// <param name="name">Name of the window which is used as window identifier and appears in the window caption. </param>
-    /// <param name="image">Image to be shown.</param>
-    /// <param name="flags">Flags of the window. Currently the only supported flag is WindowMode.AutoSize. 
+    /// <param name="flags">Flags of the window. Currently the only supported flag is WindowMode.AutoSize.
     /// If it is set, window size is automatically adjusted to fit the displayed image (see cvShowImage), while user can not change the window size manually. </param>
     public Window(string name, Mat? image = null, WindowFlags flags = WindowFlags.AutoSize)
     {
         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("Null or empty window name.", nameof(name));
-            
+
         this.name = name;
         NativeMethods.HandleException(
             NativeMethods.highgui_namedWindow(name, (int) flags));
 
         if (image is not null)
             ShowImage(image);
-            
+
         trackbars = new Dictionary<string, CvTrackbar>();
 
-        if (!Windows.ContainsKey(name))
-            Windows.Add(name, this);
-            
-        callbackHandle = null;
+        Windows[name] = this;
     }
 
     /// <summary>
-    /// ウィンドウ名が指定されなかったときに、適当な名前を作成して返す.
+    /// Creates a fallback window name when none is supplied.
     /// </summary>
     /// <returns></returns>
     private static string DefaultName()
     {
-        return $"window{windowCount++}";
+        return $"window{Interlocked.Increment(ref windowCount) - 1}";
     }
 
     /// <summary>
-    /// Releases managed resources
+    /// Gets whether this window has already been destroyed.
     /// </summary>
-    protected override void DisposeManaged()
+    public bool IsDisposed { get; private set; }
+
+    /// <summary>
+    /// Destroys this window.
+    /// </summary>
+    public void Dispose()
     {
-        foreach (var pair in trackbars)
-        {
-            pair.Value?.Dispose();
-        }
-        Windows.Remove(name);
-        if (callbackHandle is not null && callbackHandle.IsAllocated)
-        {
-            callbackHandle.Dispose();
-        }
+        if (IsDisposed)
+            return;
+        IsDisposed = true;
 
-        NativeMethods.HandleException(
-            NativeMethods.highgui_destroyWindow(name));
+        // Only remove the map entry if it still points at this instance: another Window may have
+        // since reused the same name (see the constructor), and that instance's entry must survive.
+        ((ICollection<KeyValuePair<string, Window>>) Windows).Remove(new KeyValuePair<string, Window>(name, this));
+        trackbars.Clear();
 
-        base.DisposeManaged();
+        // Destroying the window also releases OpenCV's references to its mouse/trackbar
+        // callbacks (Cv2.DestroyWindow forgets the registered delegates).
+        Cv2.DestroyWindow(name);
     }
 
     /// <summary>
-    /// Destroys this window. 
+    /// Destroys this window.
     /// </summary>
     public void Close()
     {
@@ -131,28 +99,12 @@ public class Window : DisposableObject
     }
 
     /// <summary>
-    /// Destroys all the opened HighGUI windows. 
+    /// Destroys all the opened HighGUI windows.
     /// </summary>
     public static void DestroyAllWindows()
     {
-        foreach (var window in Windows.Values)
-        {
-            if (window is null || window.IsDisposed)
-            {
-                continue;
-            }                
-            NativeMethods.HandleException(
-                NativeMethods.highgui_destroyWindow(window.name));
-            foreach (var trackbar in window.trackbars.Values)
-            {
-                trackbar?.Dispose();
-            }
-            //w.Dispose();
-        }
         Windows.Clear();
-
-        NativeMethods.HandleException(
-            NativeMethods.highgui_destroyAllWindows());
+        Cv2.DestroyAllWindows();
     }
 
     #endregion
@@ -171,28 +123,7 @@ public class Window : DisposableObject
     /// <summary>
     /// Gets window name
     /// </summary>
-    public string Name
-    {
-        get => name;
-        private set => name = value;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    internal MouseCallback? MouseCallback
-    {
-        get => mouseCallback;
-        set
-        {
-            if (callbackHandle is not null && callbackHandle.IsAllocated)
-            {
-                callbackHandle.Dispose();
-            }
-            mouseCallback = value;
-            callbackHandle = (mouseCallback is null) ? null : new ScopedGCHandle(mouseCallback, GCHandleType.Normal);
-        }
-    }
+    public string Name => name;
 
     #endregion
 
@@ -207,7 +138,7 @@ public class Window : DisposableObject
     public CvTrackbar CreateTrackbar(string trackbarName, TrackbarCallback callback)
     {
         var trackbar = new CvTrackbar(trackbarName, name, callback);
-        trackbars.Add(trackbarName, trackbar);
+        trackbars[trackbarName] = trackbar;
         return trackbar;
     }
 
@@ -219,35 +150,11 @@ public class Window : DisposableObject
     /// <param name="max">Maximal position of the slider. Minimal position is always 0. </param>
     /// <param name="callback">the function to be called every time the slider changes the position. This function should be prototyped as void Foo(int);</param>
     /// <returns></returns>
-
     public CvTrackbar CreateTrackbar(string trackbarName, int initialPos, int max, TrackbarCallback callback)
     {
-        var trackbar = new CvTrackbar(trackbarName, name, initialPos, max, callback);
-        trackbars.Add(trackbarName, trackbar);
+        var trackbar = new CvTrackbar(trackbarName, name, callback, initialPos, max);
+        trackbars[trackbarName] = trackbar;
         return trackbar;
-    }
-
-    /// <summary>
-    /// Display text on the window's image as an overlay for delay milliseconds. This is not editing the image's data. The text is display on the top of the image.
-    /// </summary>
-    /// <param name="text">Overlay text to write on the window’s image</param>
-    /// <param name="delayMs">Delay to display the overlay text. If this function is called before the previous overlay text time out, the timer is restarted and the text updated.
-    /// If this value is zero, the text never disappears.</param>
-    public void DisplayOverlay(string text, int delayMs)
-    {
-        throw new NotImplementedException();
-        //Cv.DisplayOverlay(name, text, delayms);
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="text">Text to write on the window’s statusbar</param>
-    /// <param name="delayms">Delay to display the text. If this function is called before the previous text time out, the timer is restarted and the text updated. If this value is zero, the text never disapers.</param>
-    public void DisplayStatusBar(string text, int delayms)
-    {
-        throw new NotImplementedException();
-        //Cv.DisplayStatusBar(name, text, delayms);
     }
 
     /// <summary>
@@ -259,7 +166,7 @@ public class Window : DisposableObject
     {
         return Cv2.GetWindowProperty(name, propId);
     }
-        
+
     /// <summary>
     /// Sets window position
     /// </summary>
@@ -323,16 +230,6 @@ public class Window : DisposableObject
     }
 
     /// <summary>
-    /// get native window handle (HWND in case of Win32 and Widget in case of X Window) 
-    /// </summary>
-    public IntPtr GetHandle()
-    {
-        NativeMethods.HandleException(
-            NativeMethods.highgui_cvGetWindowHandle(name, out var ret));
-        return ret;
-    }
-
-    /// <summary>
     /// Waits for a pressed key
     /// </summary>
     /// <param name="delay">Delay in milliseconds. </param>
@@ -344,7 +241,7 @@ public class Window : DisposableObject
 
     /// <summary>
     /// Waits for a pressed key.
-    /// Similar to #waitKey, but returns full key code. 
+    /// Similar to #waitKey, but returns full key code.
     /// Key code is implementation specific and depends on used backend: QT/GTK/Win32/etc
     /// </summary>
     /// <param name="delay">Delay in milliseconds. 0 is the special value that means ”forever”</param>
@@ -355,64 +252,46 @@ public class Window : DisposableObject
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="images"></param>
     public static void ShowImages(params Mat[] images)
     {
-        if (images is null)            
-            throw new ArgumentNullException(nameof(images));
-        if (images.Length == 0)
-            return;
+        ArgumentNullException.ThrowIfNull(images);
 
-        var windows = new List<Window>();
-        foreach (var img in images)
-        {
-            windows.Add(new Window { Image = img });
-        }
-
-        WaitKey();
-
-        foreach (var w in windows)
-        {
-            w.Close();
-        }
+        ShowImagesAndWaitKey(images.Select(img => new Window { Image = img }));
     }
 
     /// <summary>
-    /// 
+    /// Shows each of the given (title, image) pairs in its own window.
+    /// Pairing each title with its image in a single tuple makes a length mismatch
+    /// between titles and images structurally impossible.
     /// </summary>
-    /// <param name="images"></param>
-    /// <param name="names"></param>
-    public static void ShowImages(IEnumerable<Mat> images, IEnumerable<string> names)
+    /// <param name="images">Pairs of window title and image to display</param>
+    public static void ShowImages(params (string Title, Mat Image)[] images)
     {
-        if (images is null)
-            throw new ArgumentNullException(nameof(images));
-        if (names is null)
-            throw new ArgumentNullException(nameof(names));
+        ArgumentNullException.ThrowIfNull(images);
 
-        var imagesArray = images.ToArray();
-        var namesArray = names.ToArray();
+        ShowImagesAndWaitKey(images.Select(t => new Window(t.Title, image: t.Image)));
+    }
 
-        if (imagesArray.Length == 0)
+    /// <summary>
+    /// Opens the given windows, blocks until a key is pressed, then closes them all.
+    /// </summary>
+    private static void ShowImagesAndWaitKey(IEnumerable<Window> windows)
+    {
+        var windowList = windows.ToList();
+        if (windowList.Count == 0)
             return;
-        if (namesArray.Length < imagesArray.Length)
-            throw new ArgumentException("names.Length < images.Length");
 
-        var windows = new List<Window>();
-        for (var i = 0; i < imagesArray.Length; i++)
-        {
-            windows.Add(new Window(namesArray[i], image: imagesArray[i]));
-        }
+        WaitKey();
 
-        Cv2.WaitKey();
-
-        foreach (var w in windows)
+        foreach (var w in windowList)
         {
             w.Close();
         }
     }
-        
+
     /// <summary>
     /// Retrieves a created window by name
     /// </summary>

@@ -15,15 +15,12 @@ public class Index : CvObject
     /// <param name="distType"></param>
     public Index(InputArray features, IndexParams @params, FlannDistance distType = FlannDistance.L2)
     {
-        if (features is null)
-            throw new ArgumentNullException(nameof(features));
-        if (@params is null)
-            throw new ArgumentNullException(nameof(@params));
+        ArgumentNullException.ThrowIfNull(@params);
 
         NativeMethods.HandleException(
-            NativeMethods.flann_Index_new(features.CvPtr, @params.CvPtr, (int)distType, out var p));
+            NativeMethods.flann_Index_new(features.Proxy, @params.CvPtr, (int)distType, out var p));
 
-        GC.KeepAlive(features);
+        GC.KeepAlive(features.Source);
         GC.KeepAlive(@params);
         if (p == IntPtr.Zero)
             throw new OpenCvSharpException("Failed to create Index");
@@ -50,23 +47,19 @@ public class Index : CvObject
     /// <param name="params">Search parameters</param>
     public void KnnSearch(float[] queries, out int[] indices, out float[] dists, int knn, SearchParams @params)
     {
-        if (queries is null)
-            throw new ArgumentNullException(nameof(queries));
-        if (@params is null)
-            throw new ArgumentNullException(nameof(@params));
+        ArgumentNullException.ThrowIfNull(queries);
+        ArgumentNullException.ThrowIfNull(@params);
         if (queries.Length == 0)
             throw new ArgumentException("empty array", nameof(queries));
-        if (knn < 1)
-            throw new ArgumentOutOfRangeException(nameof(knn));
+        ArgumentOutOfRangeException.ThrowIfLessThan(knn, 1);
 
         indices = new int[knn];
         dists = new float[knn];
 
         NativeMethods.HandleException(
             NativeMethods.flann_Index_knnSearch1(
-                CvPtr, queries, queries.Length, indices, dists, knn, @params.CvPtr));
+                Handle, queries, queries.Length, indices, dists, knn, @params.CvPtr));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(@params);
     }
 
@@ -80,20 +73,15 @@ public class Index : CvObject
     /// <param name="params">Search parameters</param>
     public void KnnSearch(Mat queries, Mat indices, Mat dists, int knn, SearchParams @params)
     {
-        if (queries is null)
-            throw new ArgumentNullException(nameof(queries));
-        if (indices is null)
-            throw new ArgumentNullException(nameof(indices));
-        if (dists is null)
-            throw new ArgumentNullException(nameof(dists));
-        if (@params is null)
-            throw new ArgumentNullException(nameof(@params));
+        ArgumentNullException.ThrowIfNull(queries);
+        ArgumentNullException.ThrowIfNull(indices);
+        ArgumentNullException.ThrowIfNull(dists);
+        ArgumentNullException.ThrowIfNull(@params);
 
         NativeMethods.HandleException(
             NativeMethods.flann_Index_knnSearch2(
-                CvPtr, queries.CvPtr, indices.CvPtr, dists.CvPtr, knn, @params.CvPtr));
+                Handle, queries.CvPtr, indices.CvPtr, dists.CvPtr, knn, @params.CvPtr));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(queries);
         GC.KeepAlive(indices);
         GC.KeepAlive(dists);
@@ -110,21 +98,17 @@ public class Index : CvObject
     /// <param name="params">Search parameters</param>
     public void KnnSearch(Mat queries, out int[] indices, out float[] dists, int knn, SearchParams @params)
     {
-        if (queries is null)
-            throw new ArgumentNullException(nameof(queries));
-        if (@params is null)
-            throw new ArgumentNullException(nameof(@params));
-        if (knn < 1)
-            throw new ArgumentOutOfRangeException(nameof(knn));
+        ArgumentNullException.ThrowIfNull(queries);
+        ArgumentNullException.ThrowIfNull(@params);
+        ArgumentOutOfRangeException.ThrowIfLessThan(knn, 1);
 
         indices = new int[knn];
         dists = new float[knn];
 
         NativeMethods.HandleException(
             NativeMethods.flann_Index_knnSearch3(
-                CvPtr, queries.CvPtr, indices, dists, knn, @params.CvPtr));
+                Handle, queries.CvPtr, indices, dists, knn, @params.CvPtr));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(queries);
         GC.KeepAlive(@params);
     }
@@ -140,20 +124,15 @@ public class Index : CvObject
     /// <param name="params">Search parameters</param>
     public void RadiusSearch(float[] queries, int[] indices, float[] dists, double radius, int maxResults, SearchParams @params)
     {
-        if (queries is null)
-            throw new ArgumentNullException(nameof(queries));
-        if (indices is null)
-            throw new ArgumentNullException(nameof(indices));
-        if (dists is null)
-            throw new ArgumentNullException(nameof(dists));
-        if (@params is null)
-            throw new ArgumentNullException(nameof(@params));
+        ArgumentNullException.ThrowIfNull(queries);
+        ArgumentNullException.ThrowIfNull(indices);
+        ArgumentNullException.ThrowIfNull(dists);
+        ArgumentNullException.ThrowIfNull(@params);
 
         NativeMethods.HandleException(
             NativeMethods.flann_Index_radiusSearch1(
-                CvPtr, queries, queries.Length, indices, indices.Length, dists, dists.Length, radius, maxResults, @params.CvPtr));
+                Handle, queries, queries.Length, indices, indices.Length, dists, dists.Length, radius, maxResults, @params.CvPtr));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(@params);
     }
 
@@ -168,20 +147,15 @@ public class Index : CvObject
     /// <param name="params">Search parameters</param>
     public void RadiusSearch(Mat queries, Mat indices, Mat dists, double radius, int maxResults, SearchParams @params)
     {
-        if (queries is null)
-            throw new ArgumentNullException(nameof(queries));
-        if (indices is null)
-            throw new ArgumentNullException(nameof(indices));
-        if (dists is null)
-            throw new ArgumentNullException(nameof(dists));
-        if (@params is null)
-            throw new ArgumentNullException(nameof(@params));
+        ArgumentNullException.ThrowIfNull(queries);
+        ArgumentNullException.ThrowIfNull(indices);
+        ArgumentNullException.ThrowIfNull(dists);
+        ArgumentNullException.ThrowIfNull(@params);
 
         NativeMethods.HandleException(
             NativeMethods.flann_Index_radiusSearch2(
-                CvPtr, queries.CvPtr, indices.CvPtr, dists.CvPtr, radius, maxResults, @params.CvPtr));
+                Handle, queries.CvPtr, indices.CvPtr, dists.CvPtr, radius, maxResults, @params.CvPtr));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(queries);
         GC.KeepAlive(indices);
         GC.KeepAlive(dists);
@@ -199,20 +173,15 @@ public class Index : CvObject
     /// <param name="params">Search parameters</param>
     public void RadiusSearch(Mat queries, int[] indices, float[] dists, double radius, int maxResults, SearchParams @params)
     {
-        if (queries is null)
-            throw new ArgumentNullException(nameof(queries));
-        if (indices is null)
-            throw new ArgumentNullException(nameof(indices));
-        if (dists is null)
-            throw new ArgumentNullException(nameof(dists));
-        if (@params is null)
-            throw new ArgumentNullException(nameof(@params));
+        ArgumentNullException.ThrowIfNull(queries);
+        ArgumentNullException.ThrowIfNull(indices);
+        ArgumentNullException.ThrowIfNull(dists);
+        ArgumentNullException.ThrowIfNull(@params);
 
         NativeMethods.HandleException(
             NativeMethods.flann_Index_radiusSearch3(
-                CvPtr, queries.CvPtr, indices, indices.Length, dists, dists.Length, radius, maxResults, @params.CvPtr));
+                Handle, queries.CvPtr, indices, indices.Length, dists, dists.Length, radius, maxResults, @params.CvPtr));
 
-        GC.KeepAlive(this);
         GC.KeepAlive(queries);
         GC.KeepAlive(@params);
     }
@@ -226,7 +195,6 @@ public class Index : CvObject
         if (string.IsNullOrEmpty(filename))
             throw new ArgumentNullException(nameof(filename));
         NativeMethods.HandleException(
-            NativeMethods.flann_Index_save(CvPtr, filename));
-        GC.KeepAlive(this);
+            NativeMethods.flann_Index_save(Handle, filename));
     }
 }

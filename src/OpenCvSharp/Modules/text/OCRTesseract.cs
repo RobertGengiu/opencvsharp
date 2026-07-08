@@ -1,4 +1,4 @@
-using OpenCvSharp.Internal;
+﻿using OpenCvSharp.Internal;
 using OpenCvSharp.Internal.Vectors;
 
 namespace OpenCvSharp.Text;
@@ -67,17 +67,16 @@ public sealed class OCRTesseract : BaseOCR
         out float[] componentConfidences,
         ComponentLevels componentLevel = ComponentLevels.Word)
     {
-        if (image is null)
-            throw new ArgumentNullException(nameof(image));
+        ArgumentNullException.ThrowIfNull(image);
         image.ThrowIfDisposed();
 
         using var outputTextString = new StdString();
-        using var componentRectsVector = new VectorOfRect();
+        using var componentRectsVector = new StdVector<Rect>();
         using var componentTextsVector = new VectorOfString();
-        using var componentConfidencesVector = new VectorOfFloat();
+        using var componentConfidencesVector = new StdVector<float>();
         NativeMethods.HandleException(
             NativeMethods.text_OCRTesseract_run1(
-                RawPtr,
+                Handle,
                 image.CvPtr,
                 outputTextString.CvPtr,
                 componentRectsVector.CvPtr,
@@ -89,7 +88,6 @@ public sealed class OCRTesseract : BaseOCR
         componentTexts = componentTextsVector.ToArray();
         componentConfidences = componentConfidencesVector.ToArray();
 
-        GC.KeepAlive(this);
         GC.KeepAlive(image);
     }
 
@@ -118,20 +116,18 @@ public sealed class OCRTesseract : BaseOCR
         out float[] componentConfidences,
         ComponentLevels componentLevel = ComponentLevels.Word)
     {
-        if (image is null)
-            throw new ArgumentNullException(nameof(image));
-        if (mask is null)
-            throw new ArgumentNullException(nameof(mask));
+        ArgumentNullException.ThrowIfNull(image);
+        ArgumentNullException.ThrowIfNull(mask);
         image.ThrowIfDisposed();
         mask.ThrowIfDisposed();
 
         using var outputTextString = new StdString();
-        using var componentRectsVector = new VectorOfRect();
+        using var componentRectsVector = new StdVector<Rect>();
         using var componentTextsVector = new VectorOfString();
-        using var componentConfidencesVector = new VectorOfFloat();
+        using var componentConfidencesVector = new StdVector<float>();
         NativeMethods.HandleException(
             NativeMethods.text_OCRTesseract_run2(
-                RawPtr,
+                Handle,
                 image.CvPtr,
                 mask.CvPtr,
                 outputTextString.CvPtr,
@@ -144,7 +140,6 @@ public sealed class OCRTesseract : BaseOCR
         componentTexts = componentTextsVector.ToArray();
         componentConfidences = componentConfidencesVector.ToArray();
 
-        GC.KeepAlive(this);
         GC.KeepAlive(image);
     }
 
@@ -154,13 +149,11 @@ public sealed class OCRTesseract : BaseOCR
     /// <param name="charWhitelist"></param>
     public void SetWhiteList(string charWhitelist)
     {
-        if (charWhitelist is null) 
-            throw new ArgumentNullException(nameof(charWhitelist));
+        ArgumentNullException.ThrowIfNull(charWhitelist);
 
         NativeMethods.HandleException(
-            NativeMethods.text_OCRTesseract_setWhiteList(RawPtr, charWhitelist));
+            NativeMethods.text_OCRTesseract_setWhiteList(Handle, charWhitelist));
 
-        GC.KeepAlive(this);
     }
 
     #endregion

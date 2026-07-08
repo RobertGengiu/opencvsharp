@@ -29,10 +29,8 @@ public abstract class FeaturesMatcher : CvObject
     {
         ThrowIfDisposed();
 
-        if (features1 is null)
-            throw new ArgumentNullException(nameof(features1));
-        if (features2 is null) 
-            throw new ArgumentNullException(nameof(features2));
+        ArgumentNullException.ThrowIfNull(features1);
+        ArgumentNullException.ThrowIfNull(features2);
         if (features1.Descriptors is null)
             throw new ArgumentException($"{nameof(features1)}.Descriptors is null", nameof(features1));
         if (features2.Descriptors is null)
@@ -40,8 +38,8 @@ public abstract class FeaturesMatcher : CvObject
         features1.Descriptors.ThrowIfDisposed();
         features2.Descriptors.ThrowIfDisposed();
 
-        using var keypointsVec1 = new VectorOfKeyPoint(features1.Keypoints);
-        using var keypointsVec2 = new VectorOfKeyPoint(features2.Keypoints);
+        using var keypointsVec1 = new StdVector<KeyPoint>(features1.Keypoints);
+        using var keypointsVec2 = new StdVector<KeyPoint>(features2.Keypoints);
         var features1Cpp = new WImageFeatures
         {
             ImgIdx = features1.ImgIdx,
@@ -56,12 +54,12 @@ public abstract class FeaturesMatcher : CvObject
             Keypoints = keypointsVec2.CvPtr,
             Descriptors = features2.Descriptors.CvPtr,
         };
-        using var matchesVec = new VectorOfDMatch();
-        using var inliersMaskVec = new VectorOfByte();
+        using var matchesVec = new StdVector<DMatch>();
+        using var inliersMaskVec = new StdVector<byte>();
         var h = new Mat();
         NativeMethods.HandleException(
             NativeMethods.stitching_FeaturesMatcher_apply(
-                CvPtr,
+                Handle,
                 ref features1Cpp,
                 ref features2Cpp,
                 out var srcImgIdx, 
@@ -72,7 +70,6 @@ public abstract class FeaturesMatcher : CvObject
                 h.CvPtr,
                 out var confidence));
 
-        GC.KeepAlive(this);
 
         return new MatchesInfo(
             srcImgIdx, dstImgIdx, matchesVec.ToArray(), inliersMaskVec.ToArray(), 
@@ -88,15 +85,14 @@ public abstract class FeaturesMatcher : CvObject
     public virtual MatchesInfo[] Apply(
         IEnumerable<ImageFeatures> features, Mat? mask = null)
     {
-        if (features is null) 
-            throw new ArgumentNullException(nameof(features));
         ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(features);
 
         var featuresArray = features.CastOrToArray();
         if (featuresArray.Length == 0)
             throw new ArgumentException("Empty features array", nameof(features));
 
-        var keypointVecs = new VectorOfKeyPoint?[featuresArray.Length];
+        var keypointVecs = new StdVector<KeyPoint>?[featuresArray.Length];
         var wImageFeatures = new WImageFeatures[featuresArray.Length];
         try
         {
@@ -106,7 +102,7 @@ public abstract class FeaturesMatcher : CvObject
                     throw new ArgumentException("features contain null descriptor mat", nameof(features));
                 featuresArray[i].Descriptors.ThrowIfDisposed();
 
-                keypointVecs[i] = new VectorOfKeyPoint();
+                keypointVecs[i] = new StdVector<KeyPoint>();
                 wImageFeatures[i] = new WImageFeatures
                 {
                     ImgIdx = featuresArray[i].ImgIdx,
@@ -116,18 +112,18 @@ public abstract class FeaturesMatcher : CvObject
                 };
             }
 
-            using var srcImgIndexVecs = new VectorOfInt32();
-            using var dstImgIndexVecs = new VectorOfInt32();
+            using var srcImgIndexVecs = new StdVector<int>();
+            using var dstImgIndexVecs = new StdVector<int>();
             using var matchesVec = new VectorOfVectorDMatch();
             using var inlinersMaskVec = new VectorOfVectorByte();
-            using var numInliersVecs = new VectorOfInt32();
+            using var numInliersVecs = new StdVector<int>();
             using var hVecs = new VectorOfMat();
-            using var confidenceVecs = new VectorOfDouble();
+            using var confidenceVecs = new StdVector<double>();
             NativeMethods.HandleException(
                 NativeMethods.stitching_FeaturesMatcher_apply2(
-                    CvPtr, 
+                    Handle, 
                     wImageFeatures, wImageFeatures.Length,
-                    mask?.CvPtr ?? IntPtr.Zero,
+                    mask?.Handle ?? OpenCvSafeHandle.Null,
                     srcImgIndexVecs.CvPtr,
                     dstImgIndexVecs.CvPtr,
                     matchesVec.CvPtr,
@@ -164,7 +160,6 @@ public abstract class FeaturesMatcher : CvObject
             {
                 vec?.Dispose();
             }
-            GC.KeepAlive(this);
         }
     }
         
@@ -176,8 +171,7 @@ public abstract class FeaturesMatcher : CvObject
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.stitching_FeaturesMatcher_isThreadSafe(CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.stitching_FeaturesMatcher_isThreadSafe(Handle, out var ret));
         return ret != 0;
     }
         
@@ -188,7 +182,6 @@ public abstract class FeaturesMatcher : CvObject
     {
         ThrowIfDisposed();
         NativeMethods.HandleException(
-            NativeMethods.stitching_FeaturesMatcher_collectGarbage(CvPtr));
-        GC.KeepAlive(this);
+            NativeMethods.stitching_FeaturesMatcher_collectGarbage(Handle));
     }
 }

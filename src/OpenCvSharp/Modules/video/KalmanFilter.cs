@@ -1,4 +1,4 @@
-﻿using OpenCvSharp.Internal;
+using OpenCvSharp.Internal;
 
 namespace OpenCvSharp;
 
@@ -60,14 +60,12 @@ public class KalmanFilter : CvObject
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.video_KalmanFilter_statePre(CvPtr, out var ret));
-            GC.KeepAlive(this);
-            return new Mat(ret, isEnabledDispose: false);
+                NativeMethods.video_KalmanFilter_statePre(Handle, out var ret));
+            return new Mat(ret, ownsHandle: false, owner: this);
         }
         set
         {
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             value.ThrowIfDisposed();
 
             using var get = StatePre; 
@@ -84,14 +82,12 @@ public class KalmanFilter : CvObject
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.video_KalmanFilter_statePost(CvPtr, out var ret));
-            GC.KeepAlive(this);
-            return new Mat(ret, isEnabledDispose: false);
+                NativeMethods.video_KalmanFilter_statePost(Handle, out var ret));
+            return new Mat(ret, ownsHandle: false, owner: this);
         }
         set
         {
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             value.ThrowIfDisposed();
 
             using var get = StatePost;
@@ -108,14 +104,12 @@ public class KalmanFilter : CvObject
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.video_KalmanFilter_transitionMatrix(CvPtr, out var ret));
-            GC.KeepAlive(this);
-            return new Mat(ret, isEnabledDispose: false);
+                NativeMethods.video_KalmanFilter_transitionMatrix(Handle, out var ret));
+            return new Mat(ret, ownsHandle: false, owner: this);
         }
         set
         {
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             value.ThrowIfDisposed();
 
             using var get = TransitionMatrix;
@@ -132,14 +126,12 @@ public class KalmanFilter : CvObject
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.video_KalmanFilter_controlMatrix(CvPtr, out var ret));
-            GC.KeepAlive(this);
-            return new Mat(ret, isEnabledDispose: false);
+                NativeMethods.video_KalmanFilter_controlMatrix(Handle, out var ret));
+            return new Mat(ret, ownsHandle: false, owner: this);
         }
         set
         {
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             value.ThrowIfDisposed();
 
             using var get = ControlMatrix;
@@ -156,14 +148,12 @@ public class KalmanFilter : CvObject
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.video_KalmanFilter_measurementMatrix(CvPtr, out var ret));
-            GC.KeepAlive(this);
-            return new Mat(ret, isEnabledDispose: false);
+                NativeMethods.video_KalmanFilter_measurementMatrix(Handle, out var ret));
+            return new Mat(ret, ownsHandle: false, owner: this);
         }
         set
         {
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             value.ThrowIfDisposed();
 
             using var get = MeasurementMatrix;
@@ -180,14 +170,12 @@ public class KalmanFilter : CvObject
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.video_KalmanFilter_processNoiseCov(CvPtr, out var ret));
-            GC.KeepAlive(this);
-            return new Mat(ret, isEnabledDispose: false);
+                NativeMethods.video_KalmanFilter_processNoiseCov(Handle, out var ret));
+            return new Mat(ret, ownsHandle: false, owner: this);
         }
         set
         {
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             value.ThrowIfDisposed();
 
             using var get = ProcessNoiseCov;
@@ -204,14 +192,12 @@ public class KalmanFilter : CvObject
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.video_KalmanFilter_measurementNoiseCov(CvPtr, out var ret));
-            GC.KeepAlive(this);
-            return new Mat(ret, isEnabledDispose: false);
+                NativeMethods.video_KalmanFilter_measurementNoiseCov(Handle, out var ret));
+            return new Mat(ret, ownsHandle: false, owner: this);
         }
         set
         {
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             value.ThrowIfDisposed();
 
             using var get = MeasurementNoiseCov;
@@ -228,14 +214,12 @@ public class KalmanFilter : CvObject
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.video_KalmanFilter_errorCovPre(CvPtr, out var ret));
-            GC.KeepAlive(this);
-            return new Mat(ret, isEnabledDispose: false);
+                NativeMethods.video_KalmanFilter_errorCovPre(Handle, out var ret));
+            return new Mat(ret, ownsHandle: false, owner: this);
         }
         set
         {
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             value.ThrowIfDisposed();
 
             using var get = ErrorCovPre;
@@ -252,14 +236,12 @@ public class KalmanFilter : CvObject
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.video_KalmanFilter_gain(CvPtr, out var ret));
-            GC.KeepAlive(this);
-            return new Mat(ret, isEnabledDispose: false);
+                NativeMethods.video_KalmanFilter_gain(Handle, out var ret));
+            return new Mat(ret, ownsHandle: false, owner: this);
         }
         set
         {
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             value.ThrowIfDisposed();
 
             using var get = Gain;
@@ -276,14 +258,12 @@ public class KalmanFilter : CvObject
         {
             ThrowIfDisposed();
             NativeMethods.HandleException(
-                NativeMethods.video_KalmanFilter_errorCovPost(CvPtr, out var ret));
-            GC.KeepAlive(this);
-            return new Mat(ret, isEnabledDispose: false);
+                NativeMethods.video_KalmanFilter_errorCovPost(Handle, out var ret));
+            return new Mat(ret, ownsHandle: false, owner: this);
         }
         set
         {
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
             value.ThrowIfDisposed();
 
             using var get = ErrorCovPost;
@@ -307,8 +287,7 @@ public class KalmanFilter : CvObject
         ThrowIfDisposed();
         NativeMethods.HandleException(
             NativeMethods.video_KalmanFilter_init(
-                CvPtr, dynamParams, measureParams, controlParams, type));
-        GC.KeepAlive(this);
+                Handle, dynamParams, measureParams, controlParams, type));
     }
 
     /// <summary>
@@ -321,9 +300,7 @@ public class KalmanFilter : CvObject
         ThrowIfDisposed();
 
         NativeMethods.HandleException(
-            NativeMethods.video_KalmanFilter_predict(CvPtr, Cv2.ToPtr(control), out var ret));
-        GC.KeepAlive(this);
-        GC.KeepAlive(control);
+            NativeMethods.video_KalmanFilter_predict(Handle, control?.Handle ?? OpenCvSafeHandle.Null, out var ret));
         return new Mat(ret);
     }
 
@@ -335,13 +312,11 @@ public class KalmanFilter : CvObject
     public Mat Correct(Mat measurement)
     {
         ThrowIfDisposed();
-        if (measurement is null)
-            throw new ArgumentNullException(nameof(measurement));
+        ArgumentNullException.ThrowIfNull(measurement);
         measurement.ThrowIfDisposed();
 
         NativeMethods.HandleException(
-            NativeMethods.video_KalmanFilter_correct(CvPtr, measurement.CvPtr, out var ret));
-        GC.KeepAlive(this);
+            NativeMethods.video_KalmanFilter_correct(Handle, measurement.CvPtr, out var ret));
         GC.KeepAlive(measurement);
         return new Mat(ret);
     }

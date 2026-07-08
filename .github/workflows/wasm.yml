@@ -9,17 +9,18 @@ on:
 
 env:
   DEBIAN_FRONTEND: noninteractive
-  OPENCV_VERSION: 4.13.0
+  OPENCV_VERSION: 5.0.0
   EM_VERSION: 4.0.23
   EM_CACHE_FOLDER: 'emsdk-cache'
 
 jobs:
   build:
+    name: Wasm
 
     runs-on: ubuntu-24.04
     
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
           
@@ -55,7 +56,7 @@ jobs:
 
       - name: Restore OpenCV cache
         id: opencv-cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: |
             ${{ github.workspace }}/opencv_wasm/include
@@ -65,11 +66,11 @@ jobs:
 
       - name: Setup Emscripten cache
         id: cache-system-libraries
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{env.EM_CACHE_FOLDER}}
           key: ${{env.EM_VERSION}}-${{ runner.os }}
-      - uses: mymindstorm/setup-emsdk@v14
+      - uses: mymindstorm/setup-emsdk@v16
         with:
           version: ${{env.EM_VERSION}}
           actions-cache-folder: ${{env.EM_CACHE_FOLDER}}
@@ -110,7 +111,7 @@ jobs:
             -DBUILD_opencv_objc_bindings_generator=OFF \
             -DBUILD_opencv_rapid=OFF \
             -DBUILD_opencv_reg=OFF \
-            -DBUILD_opencv_stereo=OFF \
+            -DBUILD_opencv_stereo=ON \
             -DBUILD_opencv_structured_light=OFF \
             -DBUILD_opencv_surface_matching=OFF \
             -DBUILD_opencv_wechat_qrcode=ON \
@@ -133,12 +134,12 @@ jobs:
           cmake --install opencv-${OPENCV_VERSION}/build
           em++ -r -o ${GITHUB_WORKSPACE}/opencv_wasm/libopencv.o \
             -Wl,--whole-archive ${GITHUB_WORKSPACE}/opencv_wasm/lib/*.a \
-            ${GITHUB_WORKSPACE}/opencv_wasm/lib/opencv4/3rdparty/*.a
+            ${GITHUB_WORKSPACE}/opencv_wasm/lib/opencv5/3rdparty/*.a
           ls
 
       - name: Save OpenCV cache
         if: steps.opencv-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: |
             ${{ github.workspace }}/opencv_wasm/include
@@ -150,10 +151,10 @@ jobs:
         run: |
           ls ${GITHUB_WORKSPACE}/opencv_wasm
           echo "-----"
-          emcmake cmake -S src -B src/build -DCMAKE_BUILD_TYPE=Release -DOpenCV_DIR=${GITHUB_WORKSPACE}/opencv_wasm/lib/cmake/opencv4 -DWASM_LIB=${GITHUB_WORKSPACE}/opencv_wasm/libopencv.o
+          emcmake cmake -S src -B src/build -DCMAKE_BUILD_TYPE=Release -DOpenCV_DIR=${GITHUB_WORKSPACE}/opencv_wasm/lib/cmake/opencv5 -DWASM_LIB=${GITHUB_WORKSPACE}/opencv_wasm/libopencv.o
           cmake --build src/build --parallel $(nproc)
           ls src/build/OpenCvSharpExtern
-          cp src/build/OpenCvSharpExtern/libOpenCvSharpExtern.a ${GITHUB_WORKSPACE}/nuget/
+          cp src/build/OpenCvSharpExtern/libOpenCvSharpExtern.a ${GITHUB_WORKSPACE}/packaging/nuget/
 
       - name: Check OpenCvSharpExtern
         run: |
@@ -173,11 +174,11 @@ jobs:
           version="${OPENCV_VERSION}.${yyyymmdd}${BETA}"
           echo "Package version: $version"
           
-          dotnet pack ${GITHUB_WORKSPACE}/nuget/OpenCvSharp4.runtime.wasm.csproj -o ${GITHUB_WORKSPACE}/artifacts_wasm -p:Version=$version
+          dotnet pack ${GITHUB_WORKSPACE}/packaging/nuget/OpenCvSharp5.runtime.wasm.csproj -o ${GITHUB_WORKSPACE}/artifacts_wasm -p:Version=$version
           
           ls ${GITHUB_WORKSPACE}/artifacts_wasm
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: artifacts_wasm
           path: artifacts_wasm
