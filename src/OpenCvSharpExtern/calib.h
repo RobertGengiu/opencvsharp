@@ -8,6 +8,52 @@
 
 #include "include_opencv.h"
 
+extern "C"
+{
+    // cv::CirclesGridFinderParameters (declared in objdetect.hpp; only consumed here by
+    // findCirclesGrid, so kept local rather than shared across translation units).
+    struct calib_CirclesGridFinderParameters
+    {
+        interop::Size2f densityNeighborhoodSize;
+        float minDensity;
+        int kmeansAttempts;
+        int minDistanceToAddKeypoint;
+        int keypointScale;
+        float minGraphConfidence;
+        float vertexGain;
+        float vertexPenalty;
+        float existingVertexGain;
+        float edgeGain;
+        float edgePenalty;
+        float convexHullFactor;
+        float minRNGEdgeSwitchDist;
+        int gridType;
+        float squareSize;
+        float maxRectifiedDistance;
+    };
+}
+
+static cv::CirclesGridFinderParameters cpp(const calib_CirclesGridFinderParameters& p)
+{
+    cv::CirclesGridFinderParameters pp;
+    pp.densityNeighborhoodSize = cpp(p.densityNeighborhoodSize);
+    pp.minDensity = p.minDensity;
+    pp.kmeansAttempts = p.kmeansAttempts;
+    pp.minDistanceToAddKeypoint = p.minDistanceToAddKeypoint;
+    pp.keypointScale = p.keypointScale;
+    pp.minGraphConfidence = p.minGraphConfidence;
+    pp.vertexGain = p.vertexGain;
+    pp.vertexPenalty = p.vertexPenalty;
+    pp.existingVertexGain = p.existingVertexGain;
+    pp.edgeGain = p.edgeGain;
+    pp.edgePenalty = p.edgePenalty;
+    pp.convexHullFactor = p.convexHullFactor;
+    pp.minRNGEdgeSwitchDist = p.minRNGEdgeSwitchDist;
+    pp.gridType = static_cast<cv::CirclesGridFinderParameters::GridType>(p.gridType);
+    pp.squareSize = p.squareSize;
+    pp.maxRectifiedDistance = p.maxRectifiedDistance;
+    return pp;
+}
 
 CVAPI(ExceptionStatus) calib_initCameraMatrix2D_Mat(
     cv::Mat **objectPoints,
@@ -126,6 +172,46 @@ CVAPI(ExceptionStatus) calib_findCirclesGrid_vector(
     });
 }
 
+CVAPI(ExceptionStatus) calib_findCirclesGrid_InputArray_Params(
+    const interop::InputArrayProxy* image,
+    interop::Size patternSize,
+    const interop::OutputArrayProxy* centers,
+    int flags,
+    cv::FeatureDetector* blobDetector,
+    const calib_CirclesGridFinderParameters* parameters,
+    int *returnValue)
+{
+    return cvTry([&] {
+        cv::Ptr<cv::FeatureDetector> detectorPtr;
+        if (blobDetector == nullptr)
+            detectorPtr = cv::SimpleBlobDetector::create();
+        else
+            detectorPtr = cv::Ptr<cv::FeatureDetector>(blobDetector, BlobDetectorDeleter); // don't delete
+        *returnValue = cv::findCirclesGrid(
+            InProxy(*image), cpp(patternSize), OutProxy(*centers), flags, detectorPtr, cpp(*parameters)) ? 1 : 0;
+    });
+}
+
+CVAPI(ExceptionStatus) calib_findCirclesGrid_vector_Params(
+    const interop::InputArrayProxy* image,
+    interop::Size patternSize,
+    std::vector<cv::Point2f> *centers,
+    int flags,
+    cv::FeatureDetector* blobDetector,
+    const calib_CirclesGridFinderParameters* parameters,
+    int *returnValue)
+{
+    return cvTry([&] {
+        cv::Ptr<cv::FeatureDetector> detectorPtr;
+        if (blobDetector == nullptr)
+            detectorPtr = cv::SimpleBlobDetector::create();
+        else
+            detectorPtr = cv::Ptr<cv::FeatureDetector>(blobDetector, BlobDetectorDeleter); // don't delete
+        *returnValue = cv::findCirclesGrid(
+            InProxy(*image), cpp(patternSize), *centers, flags, detectorPtr, cpp(*parameters)) ? 1 : 0;
+    });
+}
+
 
 CVAPI(ExceptionStatus) calib_calibrateCamera_InputArray(
     cv::Mat **objectPoints,
@@ -151,6 +237,35 @@ CVAPI(ExceptionStatus) calib_calibrateCamera_InputArray(
 
         *returnValue = cv::calibrateCamera(objectPointsVec, imagePointsVec, cpp(imageSize),
             IoProxy(*cameraMatrix), IoProxy(*distCoeffs), *rvecs, *tvecs, flags, cpp(criteria));
+    });
+}
+
+CVAPI(ExceptionStatus) calib_calibrateCameraRO_InputArray(
+    cv::Mat **objectPoints,
+    int objectPointsSize,
+    cv::Mat **imagePoints,
+    int imagePointsSize,
+    interop::Size imageSize,
+    int iFixedPoint,
+    const interop::InputOutputArrayProxy* cameraMatrix,
+    const interop::InputOutputArrayProxy* distCoeffs,
+    std::vector<cv::Mat> *rvecs,
+    std::vector<cv::Mat> *tvecs,
+    const interop::OutputArrayProxy* newObjPoints,
+    int flags,
+    interop::TermCriteria criteria,
+    double *returnValue)
+{
+    return cvTry([&] {
+        std::vector<cv::Mat> objectPointsVec(objectPointsSize);
+        for (auto i = 0; i < objectPointsSize; i++)
+            objectPointsVec[i] = *objectPoints[i];
+        std::vector<cv::Mat> imagePointsVec(imagePointsSize);
+        for (auto i = 0; i < imagePointsSize; i++)
+            imagePointsVec[i] = *imagePoints[i];
+
+        *returnValue = cv::calibrateCameraRO(objectPointsVec, imagePointsVec, cpp(imageSize), iFixedPoint,
+            IoProxy(*cameraMatrix), IoProxy(*distCoeffs), *rvecs, *tvecs, OutProxy(*newObjPoints), flags, cpp(criteria));
     });
 }
 

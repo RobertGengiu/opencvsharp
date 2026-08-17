@@ -354,6 +354,8 @@ public class MatTest : TestBase
         Assert.Equal(new Size(4, 3), mat.Size());
 
         // OK
+        // These two-argument calls resolve to the dedicated SubMat(System.Range, System.Range)
+        // overload, not SubMat(Range[]), so they are unaffected by dropping params there.
         using var subMat1 = mat.SubMat(0..2, 1..4);
         Assert.Equal(new Size(3, 2), subMat1.Size());
         Assert.True(subMat1.GetArray(out byte[] subMat1Array));
@@ -364,7 +366,7 @@ public class MatTest : TestBase
         Assert.True(subMat2.GetArray(out byte[] subMat2Array));
         Assert.Equal([5, 6,7,8], subMat2Array);
 
-        // out of range 
+        // out of range
         Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
             using (mat.SubMat(0..10, ..)) { }
@@ -380,6 +382,26 @@ public class MatTest : TestBase
         Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
             using (mat.SubMat(.., 10..20)) { }
+        });
+    }
+
+    [Fact]
+    public void RoiConstructorRequiresExplicitRangesArray()
+    {
+        var values = new byte[,] {
+            {1, 2, 3, 4},
+            {5, 6, 7, 8},
+            {9, 10,11,12}};
+        using var mat = Mat.FromArray(values);
+
+        using var roi = new Mat(mat, [new Range(0, 2), new Range(1, 4)]);
+        Assert.Equal(new Size(3, 2), roi.Size());
+        Assert.True(roi.GetArray(out byte[] roiArray));
+        Assert.Equal([2, 3,4, 6,7,8], roiArray);
+
+        Assert.Throws<ArgumentException>(() =>
+        {
+            using (new Mat(mat, [])) { }
         });
     }
 #endif
@@ -941,6 +963,16 @@ public class MatTest : TestBase
     }
 
     [Fact]
+    public void SetArrayRejectsSourceBufferSmallerThanMat()
+    {
+        using var mat = new Mat(2, 2, MatType.CV_8UC1);
+
+        var exception = Assert.Throws<ArgumentException>(() => mat.SetArray(new byte[] { 1 }));
+
+        Assert.Equal("data", exception.ParamName);
+    }
+
+    [Fact]
     public void SetRectangularArrayByte()
     {
         using var mat = new Mat(2, 2, MatType.CV_8UC1);
@@ -956,6 +988,16 @@ public class MatTest : TestBase
         Assert.Equal(data[0, 1], mat.Get<byte>(0, 1));
         Assert.Equal(data[1, 0], mat.Get<byte>(1, 0));
         Assert.Equal(data[1, 1], mat.Get<byte>(1, 1));
+    }
+
+    [Fact]
+    public void SetRectangularArrayRejectsSourceBufferSmallerThanMat()
+    {
+        using var mat = new Mat(2, 2, MatType.CV_8UC1);
+
+        var exception = Assert.Throws<ArgumentException>(() => mat.SetRectangularArray(new byte[,] { { 1 } }));
+
+        Assert.Equal("data", exception.ParamName);
     }
 
     [Fact]
@@ -1100,6 +1142,29 @@ public class MatTest : TestBase
             }
         }
     }
+
+    [Fact]
+    public void SubMatWithEmptyRangesArrayThrows()
+    {
+        // SubMat(Range[]) is not params, so mat.SubMat() is now a compile error;
+        // this covers the residual case of an explicitly empty array.
+        using var mat = new Mat(10, 10, MatType.CV_8UC1, Scalar.All(0));
+        Assert.Throws<ArgumentException>(() => mat.SubMat(Array.Empty<Range>()));
+    }
+
+#if DEBUG
+    // The idx.Length < Dims guard in Mat.Ptr is DEBUG-only (Dims is a P/Invoke call, and this is
+    // a per-pixel-access hot path), so this test only applies to DEBUG builds. In Release, calling
+    // Ptr() with too few indices is undefined behavior (an out-of-bounds native read), matching
+    // cv::Mat::ptr's own CV_DbgAssert-only bounds checking.
+    [Fact]
+    public void PtrWithTooFewIndicesThrows()
+    {
+        using var mat = new Mat(10, 10, MatType.CV_8UC1, Scalar.All(0));
+        Assert.Throws<ArgumentException>(() => mat.Ptr());
+        Assert.Throws<ArgumentException>(() => mat.Ptr(new int[] { 0 }));
+    }
+#endif
 
     [Fact]
     public void GetSubMatByIndexer()
@@ -1323,13 +1388,13 @@ public class MatTest : TestBase
 
         for (int i = 0; i < 5; i++)
         {
-            using var mi_3d = m.SubMat(new Range(i, i + 1), Range.All, Range.All);
+            using var mi_3d = m.SubMat(new Range[] { new Range(i, i + 1), Range.All, Range.All });
             Assert.Equal(3, mi_3d.Dims);
             Assert.Equal(1, mi_3d.Size(0));
             Assert.Equal(6, mi_3d.Size(1));
             Assert.Equal(7, mi_3d.Size(2));
 
-            using var mi = mi_3d.Reshape(0, mi_3d.Size(1), mi_3d.Size(2));
+            using var mi = mi_3d.Reshape(0, new int[] { mi_3d.Size(1), mi_3d.Size(2) });
             Assert.Equal(2, mi.Dims);
             Assert.Equal(6, mi.Size(0));
             Assert.Equal(7, mi.Size(1));
@@ -1378,6 +1443,20 @@ public class MatTest : TestBase
                 Assert.Equal(11f, rowX[x]);
                 Assert.Equal(12f, rowY[x]);
             }
+        }
+    }
+
+    [Fact]
+    public void AsRowsIndexerChecksRowBounds()
+    {
+        using var mat = new Mat(2, 2, MatType.CV_8UC1);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => AccessRow(mat, -1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => AccessRow(mat, mat.Rows));
+
+        static void AccessRow(Mat source, int row)
+        {
+            _ = source.AsRows<byte>()[row];
         }
     }
 }

@@ -208,7 +208,7 @@ static partial class Cv2
     /// finds subpixel-accurate positions of the chessboard corners
     /// </summary>
     /// <param name="img"></param>
-    /// <param name="corners"></param>
+    /// <param name="corners">Input/output array of detected corners; overwritten in place with the refined positions.</param>
     /// <param name="regionSize"></param>
     /// <returns></returns>
     public static bool Find4QuadCornerSubpix(InputArray img, Point2f[] corners, Size regionSize)
@@ -264,5 +264,37 @@ static partial class Cv2
             NativeMethods.objdetect_drawChessboardCorners_array(
                 image.Proxy, patternSize, cornersArray, cornersArray.Length,
                 patternWasFound ? 1 : 0));
+    }
+
+    /// <summary>
+    /// Estimates the sharpness of a detected chessboard.
+    /// Image sharpness, as well as brightness, are a critical parameter for accuracy of feature point
+    /// extraction. As an example, consider the sharpness level of a camera as being described in
+    /// terms of a Gaussian low pass filter and estimate the parameter based on the width of the
+    /// transition area between a fully saturated pixel and the background pixel.
+    /// </summary>
+    /// <param name="image">source chessboard view; it must be a 8-bit grayscale or color image.</param>
+    /// <param name="patternSize">the number of inner corners per chessboard row and column.</param>
+    /// <param name="corners">Array of detected chessboard corners, the output of findChessboardCorners.</param>
+    /// <param name="riseDistance">Rise distance 0.8 means 10% ... 90% of the final signal strength.</param>
+    /// <param name="vertical">By default edge responses for horizontal lines are calculated.</param>
+    /// <param name="sharpness">Optional output image with the sharpness in the sharpness assessment area.</param>
+    /// <returns>
+    /// Scalar(average sharpness, average min brightness, average max brightness, 0).
+    /// </returns>
+    public static Scalar EstimateChessboardSharpness(
+        InputArray image, Size patternSize, InputArray corners,
+        float riseDistance = 0.8f, bool vertical = false, OutputArray sharpness = default)
+    {
+        NativeMethods.HandleException(
+            NativeMethods.objdetect_estimateChessboardSharpness(
+                image.Proxy, patternSize, corners.Proxy, riseDistance, vertical ? 1 : 0,
+                sharpness.Proxy, out var ret));
+
+        GC.KeepAlive(image.Source);
+        GC.KeepAlive(corners.Source);
+        GC.KeepAlive(sharpness.Source);
+
+        return ret;
     }
 }

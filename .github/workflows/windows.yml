@@ -15,6 +15,9 @@ on:
 
 env:
   OPENCV_VERSION: "5.0.0"
+  OPENCV_ARM64_CACHE_REVISION: "2"
+  MEDIAMTX_VERSION: "1.19.3"
+  MEDIAMTX_SHA256: "5d82148d1032a6a190d9909a2997d9989457aaadf49af87dd02cd4512d31bebe"
 
 jobs:
   build:
@@ -30,7 +33,7 @@ jobs:
           fetch-depth: 1
 
       - name: Install .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
             10.0.x
@@ -152,6 +155,14 @@ jobs:
             -D "VCPKG_OVERLAY_TRIPLETS=$env:GITHUB_WORKSPACE/cmake/triplets"
           cmake --build src/build --config Release -j 4
 
+      - name: Verify FFmpeg plugin deployment
+        shell: pwsh
+        run: |
+          $ffmpegPlugin = "test\OpenCvSharp.Tests\opencv_videoio_ffmpeg500_64.dll"
+          if (-not (Test-Path $ffmpegPlugin)) {
+            throw "OpenCV FFmpeg plugin was not deployed to the test project: $ffmpegPlugin"
+          }
+
       - name: Build OpenCvSharpExtern (slim)
         shell: powershell
         run: |
@@ -176,13 +187,72 @@ jobs:
 
       - name: Test
         shell: cmd
-        run: dotnet test test\OpenCvSharp.Tests -c Release -f net10.0 --runtime win-x64
+        # --blame-crash* collects a full memory dump and a Sequence_*.xml (listing tests executed,
+        # in order) into test\OpenCvSharp.Tests\TestResults\ if the test host crashes, so an
+        # intermittent native access violation can be attributed to a specific test without a
+        # re-run. See "Upload crash dumps on failure" below.
+        run: dotnet test test\OpenCvSharp.Tests -c Release -f net10.0 --runtime win-x64 --blame-crash --blame-crash-dump-type full
+
+      - name: Test RTSP capture
+        uses: ./.github/actions/test-rtsp-windows
+        with:
+          mediamtx-version: ${{ env.MEDIAMTX_VERSION }}
+          mediamtx-sha256: ${{ env.MEDIAMTX_SHA256 }}
+
+      - name: Upload crash dumps on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-x64-crash-dumps
+          path: test/OpenCvSharp.Tests/TestResults/
+          if-no-files-found: ignore
 
       - name: Test Windows-only functions
         shell: powershell
         run: |
           cd ${env:GITHUB_WORKSPACE}\test\OpenCvSharp.Tests.Windows
           dotnet test -c Release -f net10.0-windows --runtime win-x64
+
+      - name: Test Avalonia extensions
+        shell: powershell
+        run: |
+          cd ${env:GITHUB_WORKSPACE}\test\OpenCvSharp.Tests.Avalonia
+          # --runtime here (matching the dotnet test call below) makes the build land in a
+          # RID-specific bin\Release\net10.0\win-x64\ subfolder; copy into that exact folder.
+          dotnet build -c Release -f net10.0 --runtime win-x64
+          Copy-Item ${env:GITHUB_WORKSPACE}\test\OpenCvSharp.Tests\OpenCvSharpExtern.dll bin\Release\net10.0\win-x64\
+          dotnet test -c Release -f net10.0 --runtime win-x64 --no-build
+
+      - name: Test NativeAOT publish
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
+
+          # Some ILCompiler versions resolve link.exe via a bare `vswhere.exe` call, which requires
+          # the VS Installer directory on PATH - not guaranteed for a plain (non-"Developer") shell.
+          $env:Path += ";${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer"
+
+          cd ${env:GITHUB_WORKSPACE}\test\OpenCvSharp.Tests.NativeAot
+
+          # Restore and publish as separate steps: NuGet's static graph restore evaluates
+          # OpenCvSharp.Analyzers.csproj (a netstandard2.0 analyzer, referenced with
+          # UndefineProperties so the *build* graph never sees PublishAot/RuntimeIdentifier) under
+          # the raw command-line global properties regardless of that item metadata, so passing
+          # -p:PublishAot=true to a combined restore+publish invocation still fails restore with
+          # NETSDK1207. Restoring without it first, then publishing with --no-restore, avoids that.
+          dotnet restore -r win-x64
+          dotnet publish -c Release -f net10.0 --runtime win-x64 -p:PublishAot=true --no-restore
+
+          # Only OpenCvSharpExtern.dll is needed: this smoke test never touches video/ffmpeg, and
+          # opencv_videoio_ffmpeg500_64.dll is only conditionally copied by CMake's POST_BUILD step
+          # in the first place (see OpenCvSharpExtern/CMakeLists.txt's `if(EXISTS ...)` guard), so
+          # it is not guaranteed to exist here.
+          $publishDir = "bin\Release\net10.0\win-x64\publish"
+          Copy-Item ${env:GITHUB_WORKSPACE}\test\OpenCvSharp.Tests\OpenCvSharpExtern.dll $publishDir
+
+          & "$publishDir\OpenCvSharp.Tests.NativeAot.exe"
+          if ($LASTEXITCODE -ne 0) { throw "NativeAOT smoke test failed with exit code $LASTEXITCODE" }
 
       - name: Verify security hardening with BinSkim
         if: inputs.run_binskim == true
@@ -235,6 +305,7 @@ jobs:
           dotnet pack src/OpenCvSharp/OpenCvSharp.csproj -c Release -o artifacts -p:Version=$version
           dotnet pack src/OpenCvSharp.GdipExtensions/OpenCvSharp.GdipExtensions.csproj -c Release -o artifacts -p:Version=$version
           dotnet pack src/OpenCvSharp.WpfExtensions/OpenCvSharp.WpfExtensions.csproj -c Release -o artifacts -p:Version=$version
+          dotnet pack src/OpenCvSharp.AvaloniaExtensions/OpenCvSharp.AvaloniaExtensions.csproj -c Release -o artifacts -p:Version=$version
 
           # Pack runtime packages
           dotnet pack packaging/nuget/OpenCvSharp5.runtime.win.csproj -o artifacts -p:Version=$version
@@ -247,15 +318,7 @@ jobs:
           dotnet pack packaging/nuget/OpenCvSharp5.Windows.csproj -o artifacts -p:Version=$version -p:PackageVersion=$version
           dotnet pack packaging/nuget/OpenCvSharp5.Windows.Slim.csproj -o artifacts -p:Version=$version -p:PackageVersion=$version
 
-      - name: Pack release zip
-        shell: pwsh
-        run: |
-          ./scripts/pack-release-zip.ps1 `
-            -WorkspaceDir "${env:GITHUB_WORKSPACE}" `
-            -OutputDir "${env:GITHUB_WORKSPACE}\artifacts" `
-            -Version ${{env.OPENCV_VERSION}}
-
-      - name: Upload NuGet packages and Release packages
+      - name: Upload NuGet packages
         uses: actions/upload-artifact@v7
         with:
           name: packages_windows
@@ -274,7 +337,7 @@ jobs:
           fetch-depth: 1
 
       - name: Install .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
             10.0.x
@@ -309,7 +372,7 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: ${{ github.workspace }}/opencv_artifacts
-          key: opencv-${{ env.OPENCV_VERSION }}-windows-arm64-${{ hashFiles('cmake/opencv_build_options.cmake') }}-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}
+          key: opencv-${{ env.OPENCV_VERSION }}-windows-arm64-v${{ env.OPENCV_ARM64_CACHE_REVISION }}-${{ hashFiles('cmake/opencv_build_options.cmake') }}-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}
 
       - name: Configure OpenCV
         if: steps.opencv-cache.outputs.cache-hit != 'true'
@@ -348,6 +411,8 @@ jobs:
             -D OPENCV_EXTRA_MODULES_PATH="$env:GITHUB_WORKSPACE/opencv_contrib/modules" `
             -D CMAKE_INSTALL_PREFIX="$env:GITHUB_WORKSPACE/opencv_artifacts" `
             -D WITH_FFMPEG=OFF `
+            -D CMAKE_C_FLAGS="/Z7" `
+            -D CMAKE_CXX_FLAGS="/Z7" `
             -D CMAKE_ASM_COMPILER="" `
             *>&1 | Tee-Object -FilePath "$env:TEMP\opencv-configure.log"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -376,14 +441,16 @@ jobs:
         shell: powershell
         run: |
           cmake --build opencv/build --config Release -j 4
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake --install opencv/build --config Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Save OpenCV cache
         if: steps.opencv-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/cache/save@v6
         with:
           path: ${{ github.workspace }}/opencv_artifacts
-          key: opencv-${{ env.OPENCV_VERSION }}-windows-arm64-${{ hashFiles('cmake/opencv_build_options.cmake') }}-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}
+          key: opencv-${{ env.OPENCV_VERSION }}-windows-arm64-v${{ env.OPENCV_ARM64_CACHE_REVISION }}-${{ hashFiles('cmake/opencv_build_options.cmake') }}-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}
 
       - name: Build OpenCvSharpExtern (full)
         shell: powershell
@@ -398,8 +465,10 @@ jobs:
             -D VCPKG_TARGET_TRIPLET=arm64-windows-static `
             -D VCPKG_MANIFEST_INSTALL=OFF `
             -D "VCPKG_INSTALLED_DIR=$env:GITHUB_WORKSPACE/vcpkg_installed" `
-            -D "VCPKG_OVERLAY_TRIPLETS=$env:GITHUB_WORKSPACE/cmake/triplets"
+            -D "VCPKG_OVERLAY_TRIPLETS=$env:GITHUB_WORKSPACE/cmake/triplets" `
+            -D OPENCVSHARP_BUILD_WITH_DEBUG_INFO=ON
           cmake --build src/build_arm64 --config Release -j 4
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build OpenCvSharpExtern (slim)
         shell: powershell
@@ -425,7 +494,19 @@ jobs:
 
       - name: Test
         shell: cmd
-        run: dotnet test test\OpenCvSharp.Tests -c Release -f net10.0 --runtime win-arm64 --filter "FullyQualifiedName!=OpenCvSharp.Tests.Core.BuildConfigurationTest.FFMPEG_IsEnabled"
+        # See the x64 job's "Test" step above for why --blame-crash* is here.
+        run: dotnet test test\OpenCvSharp.Tests -c Release -f net10.0 --runtime win-arm64 --filter "FullyQualifiedName!=OpenCvSharp.Tests.Core.BuildConfigurationTest.FFMPEG_IsEnabled" --blame-crash --blame-crash-dump-type full
+
+      - name: Upload crash dumps on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-arm64-crash-diagnostics
+          path: |
+            src/build_arm64/OpenCvSharpExtern/Release/OpenCvSharpExtern.dll
+            src/build_arm64/OpenCvSharpExtern/Release/OpenCvSharpExtern.pdb
+            test/OpenCvSharp.Tests/TestResults/
+          if-no-files-found: ignore
 
       - name: Pack NuGet packages
         shell: pwsh

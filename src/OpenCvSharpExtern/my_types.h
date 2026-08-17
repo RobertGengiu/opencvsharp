@@ -177,6 +177,23 @@ namespace interop
         double weight;
     };
 
+    // Mirrors cv::xfeatures2d::Elliptic_KeyPoint by value: that type is not trivially copyable
+    // (it declares a virtual destructor, so it carries a vtable pointer), so it cannot be used
+    // directly as a std::vector element or CVAPI parameter/return type. transf holds the 2x3
+    // row-major affine matrix (cv::Matx23f).
+    struct EllipticKeyPoint
+    {
+        KeyPoint base;
+        Size2f axes;
+        float si;
+        float transf[6];
+    };
+
+    // Used as a std::vector element and across the CVAPI boundary (see xfeatures2d_AffineFeature2D.h),
+    // so guard against a future edit accidentally making it non-POD.
+    static_assert(std::is_standard_layout_v<EllipticKeyPoint> && std::is_trivially_copyable_v<EllipticKeyPoint>,
+        "interop::EllipticKeyPoint must stay a C-ABI-compatible POD");
+
 #pragma endregion
 
     typedef struct Vec2b { uchar val[2]; } Vec2b;
@@ -270,6 +287,31 @@ extern "C"
         cv::Mat* descriptors;
     };
 
+    /** @brief Structure containing information about matches between two images (interop mirror of
+    cv::detail::MatchesInfo, used as an INPUT boundary type by Estimator/BundleAdjuster). */
+    struct CV_EXPORTS_W_SIMPLE detail_MatchesInfo
+    {
+        int src_img_idx;
+        int dst_img_idx;
+        std::vector<cv::DMatch>* matches;
+        std::vector<uchar>* inliers_mask;
+        int num_inliers;
+        cv::Mat* h;
+        double confidence;
+    };
+
+    /** @brief Interop mirror of cv::detail::CameraParams. R and t point to caller-owned Mat instances
+    that are filled via copyTo at the boundary (Mat is not trivially copyable). */
+    struct CV_EXPORTS_W_SIMPLE detail_CameraParams
+    {
+        double focal;
+        double aspect;
+        double ppx;
+        double ppy;
+        cv::Mat* r;
+        cv::Mat* t;
+    };
+
 }
 
 // bit_cast-based converter pair for layout-identical POD <-> cv:: types.
@@ -286,6 +328,7 @@ OCS_INTEROP_BITCAST(Point, cv::Point)
 OCS_INTEROP_BITCAST(Point2f, cv::Point2f)
 OCS_INTEROP_BITCAST(Point2d, cv::Point2d)
 OCS_INTEROP_BITCAST(Point3i, cv::Point3i)
+OCS_INTEROP_BITCAST(Point3f, cv::Point3f)
 OCS_INTEROP_BITCAST(Point3d, cv::Point3d)
 OCS_INTEROP_BITCAST(Size, cv::Size)
 OCS_INTEROP_BITCAST(Size2f, cv::Size2f)

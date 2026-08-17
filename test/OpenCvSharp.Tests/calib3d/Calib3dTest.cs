@@ -228,6 +228,65 @@ public class Calib3DTest(ITestOutputHelper output) : TestBase
         Assert.Contains(distCoeffValues, d => Math.Abs(d) > 1e-20);
     }
 
+    // The "releasing object" method (calibrateCameraRO) needs multiple independent views to
+    // usefully solve for per-point corrections, so this uses synthetic multi-view data
+    // (projected from a known camera) rather than the single real calibration photo in the
+    // fixture set, following the same Rodrigues/ProjectPoints-based synthesis as CalibrateHandEye.
+    [Fact]
+    public void CalibrateCameraRO()
+    {
+        var patternSize = new Size(10, 7);
+        var objectPointsArray = Create3DChessboardCorners(patternSize, 1.0f).ToArray();
+
+        var trueCameraMatrix = new double[,]
+        {
+            { 800, 0, 320 },
+            { 0, 800, 240 },
+            { 0, 0, 1 }
+        };
+        var trueDistCoeffs = new double[] { 0, 0, 0, 0, 0 };
+
+        var views = new (double[] rvec, double[] tvec)[]
+        {
+            (new double[] { 0.10, 0.05, 0.00 }, new double[] { 0.0, 0.0, 8.0 }),
+            (new double[] { 0.15, -0.05, 0.05 }, new double[] { 0.5, 0.2, 8.5 }),
+            (new double[] { -0.10, 0.10, -0.05 }, new double[] { -0.3, -0.2, 9.0 }),
+        };
+
+        var objectPoints = new List<Mat>();
+        var imagePoints = new List<Mat>();
+        try
+        {
+            foreach (var (rvec, tvec) in views)
+            {
+                Cv2.ProjectPoints(objectPointsArray, rvec, tvec, trueCameraMatrix, trueDistCoeffs, out var imagePointsArray, out _);
+                objectPoints.Add(Mat<Point3f>.FromArray(objectPointsArray));
+                imagePoints.Add(Mat<Point2f>.FromArray(imagePointsArray));
+            }
+
+            using var cameraMatrix = Mat.EyeMat(3, 3, MatType.CV_64FC1);
+            using var distCoeffs = new Mat<double>();
+            using var newObjPoints = new Mat();
+
+            var iFixedPoint = patternSize.Width - 1;
+            var rms = Cv2.CalibrateCameraRO(
+                objectPoints, imagePoints, new Size(640, 480), iFixedPoint,
+                cameraMatrix, distCoeffs, out var rvecs, out var tvecs, newObjPoints);
+
+            Assert.False(double.IsNaN(rms));
+            Assert.False(double.IsInfinity(rms));
+            Assert.Equal(views.Length, rvecs.Length);
+            Assert.Equal(views.Length, tvecs.Length);
+            Assert.False(newObjPoints.Empty());
+            Assert.Equal(objectPointsArray.Length, (int)newObjPoints.Total());
+        }
+        finally
+        {
+            foreach (var m in objectPoints) m.Dispose();
+            foreach (var m in imagePoints) m.Dispose();
+        }
+    }
+
     [Fact]
     public void FishEyeCalibrate()
     {
@@ -253,6 +312,35 @@ public class Calib3DTest(ITestOutputHelper output) : TestBase
         Assert.Contains(distCoeffValues, d => Math.Abs(d) > 1e-20);
         Assert.NotEmpty(rotationVectors);
         Assert.NotEmpty(translationVectors);
+    }
+
+    // Regression test for issue #2080-adjacent enum drift: FishEyeCalibrationFlags used to carry
+    // stale OpenCV4 fisheye-only bit values instead of the OpenCV5 aliased CALIB_* values, so
+    // FixK1..FixK4 silently set the wrong native bits. If the flags don't reach native correctly,
+    // the corresponding distortion coefficients are optimized freely instead of being held at 0.
+    [Fact]
+    public void FishEyeCalibrateWithFixedDistortion()
+    {
+        var patternSize = new Size(10, 7);
+
+        using var image = LoadImage("calibration/00.jpg");
+        using var corners = new Mat<Point2f>();
+        Cv2.FindChessboardCorners(image, patternSize, corners);
+
+        var objectPointsArray = Create3DChessboardCorners(patternSize, 1.0f).ToArray();
+        var imagePointsArray = corners.ToArray();
+
+        using var objectPoints = Mat<Point3f>.FromArray(objectPointsArray);
+        using var imagePoints = Mat<Point2f>.FromArray(imagePointsArray);
+        using var cameraMatrix = Mat.EyeMat(3, 3, MatType.CV_64FC1);
+        using var distCoeffs = new Mat<double>();
+        Cv2.FishEye.Calibrate([objectPoints], [imagePoints], image.Size(), cameraMatrix,
+            distCoeffs, out _, out _,
+            FishEyeCalibrationFlags.FixK1 | FishEyeCalibrationFlags.FixK2 |
+            FishEyeCalibrationFlags.FixK3 | FishEyeCalibrationFlags.FixK4);
+
+        var distCoeffValues = distCoeffs.ToArray();
+        Assert.All(distCoeffValues, d => Assert.Equal(0.0, d, 10));
     }
 
     [Fact]
@@ -420,6 +508,79 @@ public class Calib3DTest(ITestOutputHelper output) : TestBase
         Cv2.ProjectPoints(objPts, rvec, tvec, cameraMatrix, dist, out var imgPts, out var jacobian);
 
         Cv2.SolvePnP(objPts, imgPts, cameraMatrix, dist, ref rvec, ref tvec, useExtrinsicGuess: useExtrinsicGuess);
+    }
+
+    [Theory]
+    [InlineData(SolvePnPMethod.P3P)]
+    [InlineData(SolvePnPMethod.AP3P)]
+    [InlineData(SolvePnPMethod.IPPE)]
+    [InlineData(SolvePnPMethod.SQPNP)]
+    public void SolvePnPTestByArrayMethods(SolvePnPMethod method)
+    {
+        var rvec = new double[] { 3, 0, 0 };
+        var tvec = new double[] { 0, 0, 10 };
+        var cameraMatrix = new double[,]
+        {
+            { 1, 0, 0 },
+            { 0, 1, 0 },
+            { 0, 0, 1 }
+        };
+        var dist = new double[] { 0, 0, 0, 0, 0 };
+
+        var objPts = new[]
+        {
+            new Point3f(0,0,1),
+            new Point3f(1,0,1),
+            new Point3f(0,1,1),
+            new Point3f(1,1,1)
+        };
+
+        Cv2.ProjectPoints(objPts, rvec, tvec, cameraMatrix, dist, out var imgPts, out _);
+
+        Cv2.SolvePnP(objPts, imgPts, cameraMatrix, dist, ref rvec, ref tvec, flags: method);
+
+        // Verify the recovered pose actually reprojects onto imgPts (rather than just "didn't throw"):
+        // a stale/misdirected enum value can silently dispatch to a different native solver that
+        // still runs to completion without throwing, but produces a wrong pose.
+        Cv2.ProjectPoints(objPts, rvec, tvec, cameraMatrix, dist, out var reprojected, out _);
+        for (var i = 0; i < imgPts.Length; i++)
+        {
+            Assert.Equal(imgPts[i].X, reprojected[i].X, 3);
+            Assert.Equal(imgPts[i].Y, reprojected[i].Y, 3);
+        }
+    }
+
+    [Fact]
+    public void SolvePnPTestByArrayIPPESquare()
+    {
+        var rvec = new double[] { 3, 0, 0 };
+        var tvec = new double[] { 0, 0, 10 };
+        var cameraMatrix = new double[,]
+        {
+            { 1, 0, 0 },
+            { 0, 1, 0 },
+            { 0, 0, 1 }
+        };
+        var dist = new double[] { 0, 0, 0, 0, 0 };
+
+        var objPts = new[]
+        {
+            new Point3f(-0.5f, 0.5f, 0),
+            new Point3f(0.5f, 0.5f, 0),
+            new Point3f(0.5f, -0.5f, 0),
+            new Point3f(-0.5f, -0.5f, 0)
+        };
+
+        Cv2.ProjectPoints(objPts, rvec, tvec, cameraMatrix, dist, out var imgPts, out _);
+
+        Cv2.SolvePnP(objPts, imgPts, cameraMatrix, dist, ref rvec, ref tvec, flags: SolvePnPMethod.IPPESquare);
+
+        Cv2.ProjectPoints(objPts, rvec, tvec, cameraMatrix, dist, out var reprojected, out _);
+        for (var i = 0; i < imgPts.Length; i++)
+        {
+            Assert.Equal(imgPts[i].X, reprojected[i].X, 3);
+            Assert.Equal(imgPts[i].Y, reprojected[i].Y, 3);
+        }
     }
 
     [Fact]

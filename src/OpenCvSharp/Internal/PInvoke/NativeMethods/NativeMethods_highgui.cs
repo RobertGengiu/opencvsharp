@@ -18,7 +18,10 @@ static partial class NativeMethods
 
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial ExceptionStatus highgui_destroyAllWindows();
-        
+
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial ExceptionStatus highgui_currentUIFramework(IntPtr returnValue);
+
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial ExceptionStatus highgui_startWindowThread(out int returnValue);
 
@@ -33,6 +36,9 @@ static partial class NativeMethods
 
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial ExceptionStatus highgui_waitKeyEx(int delay, out int returnValue);
+
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial ExceptionStatus highgui_pollKey(out int returnValue);
 
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial ExceptionStatus highgui_resizeWindow([MarshalAs(UnmanagedType.LPStr)] string winName, int width, int height);
@@ -52,8 +58,12 @@ static partial class NativeMethods
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial ExceptionStatus highgui_getWindowImageRect([MarshalAs(UnmanagedType.LPStr)] string winName, out Rect returnValue);
 
-    [DllImport(DllExtern, CallingConvention = CallingConvention.Cdecl, BestFitMapping = false, ThrowOnUnmappableChar = true, ExactSpelling = true)]
-    public static extern ExceptionStatus highgui_setMouseCallback(string winName, [MarshalAs(UnmanagedType.FunctionPtr)] MouseCallback onMouse, IntPtr userData);
+    // onMouse is a function pointer to a static, [UnmanagedCallersOnly] trampoline (see
+    // Cv2.SetMouseCallback); userData is a GCHandle to the context rooting the real managed
+    // delegate, not the caller's userData directly.
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial ExceptionStatus highgui_setMouseCallback(
+        [MarshalAs(UnmanagedType.LPStr)] string winName, IntPtr onMouse, IntPtr userData);
         
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial ExceptionStatus highgui_getMouseWheelDelta(int flags, out int returnValue);
@@ -69,20 +79,18 @@ static partial class NativeMethods
     internal static partial ExceptionStatus highgui_selectROIs(
         [MarshalAs(UnmanagedType.LPStr)] string windowName, in InputArrayProxy img, IntPtr boundingBoxes, int showCrosshair, int fromCenter);
 
+    // onChange is a function pointer to a static, [UnmanagedCallersOnly] trampoline (see
+    // Cv2.CreateTrackbar), or IntPtr.Zero when no callback was supplied; userData is a GCHandle
+    // to the context rooting the real managed delegate, not the caller's userData directly.
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial ExceptionStatus highgui_createTrackbar(
         [MarshalAs(UnmanagedType.LPStr)] string trackbarName, [MarshalAs(UnmanagedType.LPStr)] string winName,
         IntPtr value, int count, IntPtr onChange, IntPtr userData, out int returnValue);
-        
-    [DllImport(DllExtern, CallingConvention = CallingConvention.Cdecl, BestFitMapping = false, ThrowOnUnmappableChar = true, ExactSpelling = true)]
-    public static extern ExceptionStatus highgui_createTrackbar(
-        [MarshalAs(UnmanagedType.LPStr)] string trackbarName, [MarshalAs(UnmanagedType.LPStr)] string winName,
-        IntPtr value, int count, TrackbarCallbackNative? onChange, IntPtr userData, out int returnValue);
 
-    [DllImport(DllExtern, CallingConvention = CallingConvention.Cdecl, BestFitMapping = false, ThrowOnUnmappableChar = true, ExactSpelling = true)]
-    public static extern ExceptionStatus highgui_createTrackbar(
+    [LibraryImport(DllExtern, EntryPoint = "highgui_createTrackbar"), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial ExceptionStatus highgui_createTrackbar(
         [MarshalAs(UnmanagedType.LPStr)] string trackbarName, [MarshalAs(UnmanagedType.LPStr)] string winName,
-        ref int value, int count, TrackbarCallbackNative? onChange, IntPtr userData, out int returnValue);
+        ref int value, int count, IntPtr onChange, IntPtr userData, out int returnValue);
 
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial ExceptionStatus highgui_getTrackbarPos(
@@ -96,8 +104,4 @@ static partial class NativeMethods
 
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial ExceptionStatus highgui_setTrackbarMin([MarshalAs(UnmanagedType.LPStr)] string trackbarName, [MarshalAs(UnmanagedType.LPStr)] string winName, int minVal);
-
-    //[DllImport(DllExtern, CallingConvention = CallingConvention.Cdecl, BestFitMapping = false, ThrowOnUnmappableChar = true, ExactSpelling = true)]
-    //public static extern ExceptionStatus highgui_createButton(
-    //    [MarshalAs(UnmanagedType.LPStr)] string barName, IntPtr onChange, IntPtr userData, int type, int initialButtonState, out int returnValue);
 }

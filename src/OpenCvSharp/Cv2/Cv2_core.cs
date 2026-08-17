@@ -307,6 +307,21 @@ public static partial class Cv2
     }
 
     /// <summary>
+    /// Checks whether the array contains at least one non-zero element. Faster than
+    /// <see cref="CountNonZero"/> when only the presence of non-zero elements matters.
+    /// </summary>
+    /// <param name="src">Single-channel array</param>
+    /// <returns>true if src has at least one non-zero element</returns>
+    public static bool HasNonZero(InputArray src)
+    {
+        NativeMethods.HandleException(
+            NativeMethods.core_hasNonZero(src.Proxy, out var ret));
+
+        GC.KeepAlive(src.Source);
+        return ret != 0;
+    }
+
+    /// <summary>
     /// computes the number of nonzero array elements
     /// </summary>
     /// <param name="mtx">Single-channel array</param>
@@ -606,8 +621,8 @@ public static partial class Cv2
     /// finds global minimum and maximum array elements and returns their values and their locations
     /// </summary>
     /// <param name="src">The source single-channel array</param>
-    /// <param name="minIdx"></param>
-    /// <param name="maxIdx"></param>
+    /// <param name="minIdx">Output array of the minimum element's per-dimension index, overwritten in place.</param>
+    /// <param name="maxIdx">Output array of the maximum element's per-dimension index, overwritten in place.</param>
     public static void MinMaxIdx(InputArray src, int[] minIdx, int[] maxIdx)
     {
         MinMaxIdx(src, out _, out _, minIdx, maxIdx);
@@ -619,8 +634,10 @@ public static partial class Cv2
     /// <param name="src">The source single-channel array</param>
     /// <param name="minVal">Pointer to returned minimum value</param>
     /// <param name="maxVal">Pointer to returned maximum value</param>
-    /// <param name="minIdx"></param>
-    /// <param name="maxIdx"></param>
+    /// <param name="minIdx">Output array of the minimum element's per-dimension index, overwritten in place.
+    /// Must have at least <c>src.Dims</c> elements (at least 2).</param>
+    /// <param name="maxIdx">Output array of the maximum element's per-dimension index, overwritten in place.
+    /// Must have at least <c>src.Dims</c> elements (at least 2).</param>
     /// <param name="mask"></param>
     public static void MinMaxIdx(InputArray src, out double minVal, out double maxVal,
         int[] minIdx, int[] maxIdx, InputArray mask = default)
@@ -803,6 +820,37 @@ public static partial class Cv2
             NativeMethods.core_flip(src.Proxy, dst.Proxy, (int) flipCode));
 
         GC.KeepAlive(src.Source);
+        GC.KeepAlive(dst.Source);
+    }
+
+    /// <summary>
+    /// Flips an n-dimensional array along the given axis.
+    /// </summary>
+    /// <param name="src">The source array</param>
+    /// <param name="dst">The destination array; will have the same size and same type as src</param>
+    /// <param name="axis">Axis to flip along.</param>
+    public static void FlipND(InputArray src, OutputArray dst, int axis)
+    {
+        NativeMethods.HandleException(
+            NativeMethods.core_flipND(src.Proxy, dst.Proxy, axis));
+
+        GC.KeepAlive(src.Source);
+        GC.KeepAlive(dst.Source);
+    }
+
+    /// <summary>
+    /// Broadcasts the given array to the given shape.
+    /// </summary>
+    /// <param name="src">input array</param>
+    /// <param name="shape">target shape. Should be a list of CV_32S numbers. Negative values are not supported.</param>
+    /// <param name="dst">output array that has the given shape</param>
+    public static void Broadcast(InputArray src, InputArray shape, OutputArray dst)
+    {
+        NativeMethods.HandleException(
+            NativeMethods.core_broadcast(src.Proxy, shape.Proxy, dst.Proxy));
+
+        GC.KeepAlive(src.Source);
+        GC.KeepAlive(shape.Source);
         GC.KeepAlive(dst.Source);
     }
 
@@ -1399,6 +1447,20 @@ public static partial class Cv2
     }
 
     /// <summary>
+    /// Computes a mask of finite (non-NaN, non-Inf) elements, a companion to <see cref="PatchNaNs"/>.
+    /// </summary>
+    /// <param name="src">input array.</param>
+    /// <param name="mask">output mask array of the same size as src, CV_8U type.</param>
+    public static void FiniteMask(InputArray src, OutputArray mask)
+    {
+        NativeMethods.HandleException(
+            NativeMethods.core_finiteMask(src.Proxy, mask.Proxy));
+
+        GC.KeepAlive(src.Source);
+        GC.KeepAlive(mask.Source);
+    }
+
+    /// <summary>
     /// implements generalized matrix product algorithm GEMM from BLAS
     /// </summary>
     /// <param name="src1"></param>
@@ -1461,7 +1523,24 @@ public static partial class Cv2
         GC.KeepAlive(src.Source);
         GC.KeepAlive(dst.Source);
     }
-        
+
+    /// <summary>
+    /// Transposes an n-dimensional array by permuting its axes according to the given order.
+    /// </summary>
+    /// <param name="src">The source array</param>
+    /// <param name="order">Permutation of axes, e.g. { 1, 0, 2 } to swap the first two axes.</param>
+    /// <param name="dst">The destination array</param>
+    public static void TransposeND(InputArray src, int[] order, OutputArray dst)
+    {
+        ArgumentNullException.ThrowIfNull(order);
+
+        NativeMethods.HandleException(
+            NativeMethods.core_transposeND(src.Proxy, order, order.Length, dst.Proxy));
+
+        GC.KeepAlive(src.Source);
+        GC.KeepAlive(dst.Source);
+    }
+
     /// <summary>
     /// performs affine transformation of each element of multi-channel input matrix
     /// </summary>
@@ -2412,38 +2491,6 @@ public static partial class Cv2
         return stdString.ToString();
     }
 
-    // Roots the user-supplied delegate for the lifetime of the registration so it is not
-    // collected while OpenCV holds the native function pointer.
-    private static CvErrorCallback? userErrorHandler;
-
-    /// <summary>
-    /// Overrides OpenCV's native error handler.
-    /// </summary>
-    /// <param name="errorHandler">
-    /// The handler invoked by OpenCV when an error is raised, or <see langword="null"/> to
-    /// restore the default native handler (which simply mutes OpenCV's stderr output).
-    /// </param>
-    /// <remarks>
-    /// By default OpenCvSharp installs a native, managed-free handler; native errors are
-    /// surfaced as managed <see cref="OpenCVException"/>s regardless. Installing a managed
-    /// handler here is opt-in and reintroduces a managed delegate into the native error
-    /// path, which is not NativeAOT / trimming friendly.
-    /// </remarks>
-    public static void SetErrorHandler(CvErrorCallback? errorHandler)
-    {
-        userErrorHandler = errorHandler;
-
-        if (errorHandler is null)
-        {
-            NativeMethods.HandleException(NativeMethods.core_setSilentErrorHandler());
-            return;
-        }
-
-        var zero = IntPtr.Zero;
-        var prev = NativeMethods.redirectError(errorHandler, IntPtr.Zero, ref zero);
-        GC.KeepAlive(prev);
-    }
-
     /// <summary>
     /// Returns library version string.
     /// For example "3.4.1-dev".
@@ -2644,6 +2691,61 @@ public static partial class Cv2
         NativeMethods.HandleException(
             NativeMethods.core_useOptimized(out var ret));
         return ret != 0;
+    }
+
+    /// <summary>
+    /// Returns whether IPP is used for acceleration.
+    /// </summary>
+    /// <returns></returns>
+    public static bool UseIPP()
+    {
+        NativeMethods.HandleException(
+            NativeMethods.core_useIPP(out var ret));
+        return ret != 0;
+    }
+
+    /// <summary>
+    /// Turns on/off IPP-based acceleration.
+    /// </summary>
+    /// <param name="flag"></param>
+    public static void SetUseIPP(bool flag)
+    {
+        NativeMethods.HandleException(
+            NativeMethods.core_setUseIPP(flag ? 1 : 0));
+    }
+
+    /// <summary>
+    /// Returns the current IPP library version.
+    /// </summary>
+    /// <returns></returns>
+    public static string GetIppVersion()
+    {
+        using var buf = new StdString();
+        NativeMethods.HandleException(
+            NativeMethods.core_getIppVersion(buf.CvPtr));
+        return buf.ToString();
+    }
+
+    /// <summary>
+    /// Returns whether IPP is used in "not exact" mode. In this mode IPP may be used even where
+    /// it and OpenCV have internal accuracy differences that impact accuracy tests.
+    /// </summary>
+    /// <returns></returns>
+    public static bool UseIppNotExact()
+    {
+        NativeMethods.HandleException(
+            NativeMethods.core_useIPP_NotExact(out var ret));
+        return ret != 0;
+    }
+
+    /// <summary>
+    /// Turns on/off IPP "not exact" mode.
+    /// </summary>
+    /// <param name="flag"></param>
+    public static void SetUseIppNotExact(bool flag)
+    {
+        NativeMethods.HandleException(
+            NativeMethods.core_setUseIPP_NotExact(flag ? 1 : 0));
     }
 
     /// <summary>

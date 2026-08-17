@@ -3,7 +3,7 @@ using Xunit;
 namespace OpenCvSharp.Tests;
 
 /// <summary>
-/// RedirectError tests
+/// Native exception propagation tests.
 /// </summary>
 public class ExceptionTest : TestBase
 {
@@ -99,52 +99,5 @@ public class ExceptionTest : TestBase
         Assert.NotEmpty(ex.FuncName);
         Assert.True(ex.Line > 0);
         Assert.Equal(ErrorCode.StsAssert, ex.Status);
-    }
-
-    [Fact]
-    public void SetErrorHandlerInvokesCustomHandler()
-    {
-        var callCount = 0;
-        var capturedStatus = default(ErrorCode);
-        var capturedFunc = "";
-        var capturedMsg = "";
-
-        CvErrorCallback handler = (status, funcName, errMsg, fileName, line, userData) =>
-        {
-            callCount++;
-            capturedStatus = status;
-            capturedFunc = funcName;
-            capturedMsg = errMsg;
-            return 0;
-        };
-
-        try
-        {
-            Cv2.SetErrorHandler(handler);
-
-            using var img = new Mat(3, 3, MatType.CV_8UC1);
-            // Even with a custom handler installed, the error still surfaces as a managed exception.
-            Assert.Throws<OpenCVException>(() => Cv2.GaussianBlur(img, img, new Size(2, 2), 1));
-        }
-        finally
-        {
-            Cv2.SetErrorHandler(null); // restore the default native silent handler
-        }
-
-        Assert.True(callCount > 0);
-        Assert.Equal(ErrorCode.StsAssert, capturedStatus);
-        Assert.StartsWith("ksize.width > 0", capturedMsg, StringComparison.Ordinal);
-        Assert.False(string.IsNullOrEmpty(capturedFunc));
-    }
-
-    [Fact]
-    public void SetErrorHandlerNullRestoresDefault()
-    {
-        // Installing then clearing a handler must leave errors still surfacing as OpenCVException.
-        Cv2.SetErrorHandler((_, _, _, _, _, _) => 0);
-        Cv2.SetErrorHandler(null);
-
-        using var img = new Mat(3, 3, MatType.CV_8UC1);
-        Assert.Throws<OpenCVException>(() => Cv2.GaussianBlur(img, img, new Size(2, 2), 1));
     }
 }

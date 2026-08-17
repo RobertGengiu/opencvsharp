@@ -1,0 +1,64 @@
+@* Root component: runs a small end-to-end smoke test against the native wasm binding on load.
+   The headless test runner (see .github/workflows/wasm.yml) waits for #result's text to leave
+   "running" and asserts data-status="ok". A native module name mismatch (#2039) throws
+   DllNotFoundException here; an OpenCL/UMat probe crash (#2037) either throws or hangs this
+   component forever, which the runner's timeout also catches. An ImEncode/ImDecode round trip
+   for JPEG/PNG/TIFF guards against the codecs building but silently no-op'ing - or hanging - on
+   wasm (#2043). libjpeg-turbo/libpng/libtiff use setjmp/longjmp for error handling, which hung
+   (rather than threw) when OpenCvSharpExtern.a was built with a different Emscripten version than
+   the one the .NET wasm SDK links it with; see EM_VERSION in .github/workflows/wasm.yml. A
+   Cv2.Dnn.BlobFromImage call exercises the dnn module's native wrapper without needing a trained
+   model file on disk, guarding against the OpenCV build config showing dnn as built while the
+   wasm wrapper actually fails to link or crashes at runtime. *@
+
+<pre id="result" data-status="@status">@status: @detail</pre>
+
+@code {
+    private string status = "running";
+    private string detail = "";
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            var version = Cv2.GetVersionString();
+
+            using var mat = new Mat(256, 256, MatType.CV_8UC1, Scalar.All(0));
+            Cv2.Rectangle(mat, new Rect(40, 40, 120, 120), Scalar.All(255), thickness: -1);
+            Cv2.Circle(mat, new Point(180, 180), 30, Scalar.All(200), thickness: -1);
+
+            // Exercises the UMat/OpenCL-probe path (cv::ocl::haveOpenCL()) that crashed on wasm; see #2037.
+            using var orb = ORB.Create(500);
+            using var descriptors = new Mat();
+            orb.DetectAndCompute(mat, default, out var keypoints, descriptors);
+
+            foreach (var ext in new[] { ".jpg", ".png", ".tiff" })
+            {
+                var encoded = Cv2.ImEncode(ext, mat, out var buf);
+                if (!encoded || buf.Length == 0)
+                    throw new InvalidOperationException($"ImEncode({ext}) failed or produced an empty buffer");
+
+                using var decoded = Cv2.ImDecode(buf, ImreadModes.Unchanged);
+                if (decoded.Empty() || decoded.Size() != mat.Size())
+                    throw new InvalidOperationException($"ImDecode({ext}) round trip failed: empty={decoded.Empty()}, size={decoded.Size()}");
+            }
+
+            // Exercises the dnn module's native wrapper (cv::dnn::blobFromImage) without loading a trained
+            // model file - just confirms the wasm build actually links and runs dnn, not merely that OpenCV's
+            // CMake config reports it as built.
+            using var blob = Cv2.Dnn.BlobFromImage(mat, size: new Size(64, 64));
+            if (blob.Empty())
+                throw new InvalidOperationException("Cv2.Dnn.BlobFromImage produced an empty blob");
+
+            var blobShape = string.Join('x', Enumerable.Range(0, blob.Dims).Select(blob.Size));
+
+            status = "ok";
+            detail = $"OpenCV {version}, ORB keypoints: {keypoints.Length}, dnn blob shape: {blobShape}";
+        }
+        catch (Exception ex)
+        {
+            status = "error";
+            detail = ex.ToString();
+        }
+    }
+}

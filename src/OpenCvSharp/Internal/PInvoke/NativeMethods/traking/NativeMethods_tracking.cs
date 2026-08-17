@@ -28,6 +28,14 @@ static partial class NativeMethods
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial ExceptionStatus tracking_Ptr_TrackerKCF_get(IntPtr ptr, out IntPtr returnValue);
 
+    // callback is a function pointer to a static, [UnmanagedCallersOnly] trampoline (see
+    // TrackerKCF.SetFeatureExtractor); cv::TrackerKCF::FeatureExtractorCallbackFN has no
+    // per-instance user-data slot, so unlike the other callback entry points there is no context
+    // handle to thread through here.
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial ExceptionStatus tracking_TrackerKCF_setFeatureExtractor(
+        IntPtr tracker, IntPtr callback, int pcaFunc);
+
 
     // TrackerCSRT
 

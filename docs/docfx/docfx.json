@@ -8,6 +8,8 @@
         }
       ],
       "dest": "api",
+      "filter": "filterConfig.yml",
+      "memberLayout": "separatePages",
       "disableGitFeatures": false,
       "disableDefaultFilter": false,
       "properties": {
@@ -21,6 +23,9 @@
         "files": [
           "api/**.yml",
           "api/index.md"
+        ],
+        "exclude": [
+          "api/OpenCvSharp.Internal*.yml"
         ]
       },
       {
@@ -28,16 +33,20 @@
           "articles/**.md",
           "articles/**/toc.yml",
           "toc.yml",
-          "*.md",
-          "../../*.md"
+          "*.md"
         ]
       }
     ],
     "resource": [
       {
         "files": [
-          "images/**",
-          "../img/**"
+          "images/**"
+        ]
+      },
+      {
+        "src": "..",
+        "files": [
+          "img/**"
         ]
       }
     ],
@@ -68,9 +77,6 @@
     "noLangKeyword": false,
     "keepFileLink": false,
     "cleanupCacheHistory": false,
-    "disableGitFeatures": false,
-    "xref": [
-      "https://xref.docs.microsoft.com/query?uid={uid}"
-    ]
+    "disableGitFeatures": false
   }
 }

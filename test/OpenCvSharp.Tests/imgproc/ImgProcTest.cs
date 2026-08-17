@@ -873,6 +873,33 @@ public class ImgProcTest : TestBase
     }
 
     [Fact]
+    public void StackBlur()
+    {
+        using var src = LoadImage("lenna.png", ImreadModes.Grayscale);
+        using var dst = new Mat();
+        Cv2.StackBlur(src, dst, new Size(3, 3));
+
+        Assert.Equal(src.Size(), dst.Size());
+        Assert.Equal(src.Type(), dst.Type());
+    }
+
+    [Fact]
+    public void ThresholdWithMask()
+    {
+        using var src = Mat.FromPixelData(1, 4, MatType.CV_8UC1, new byte[] { 10, 200, 10, 200 });
+        using var dst = src.Clone();
+        using var mask = Mat.FromPixelData(1, 4, MatType.CV_8UC1, new byte[] { 1, 1, 1, 0 }); // last element excluded
+
+        var ret = Cv2.ThresholdWithMask(src, dst, mask, 128, 255, ThresholdTypes.Binary);
+
+        Assert.Equal(128, ret);
+        Assert.Equal(0, dst.At<byte>(0, 0));
+        Assert.Equal(255, dst.At<byte>(0, 1));
+        Assert.Equal(0, dst.At<byte>(0, 2));
+        Assert.Equal(200, dst.At<byte>(0, 3)); // masked-out pixel left as-is
+    }
+
+    [Fact]
     public void BoxFilter()
     {
         using var src = LoadImage("lenna.png", ImreadModes.Grayscale);
@@ -1387,6 +1414,29 @@ public class ImgProcTest : TestBase
     }
 
     [Fact]
+    public void GoodFeaturesToTrackWithGradientSize()
+    {
+        using var src = LoadImage("lenna.png", ImreadModes.Grayscale);
+        using var mask = new Mat();
+        var corners = Cv2.GoodFeaturesToTrack(src, 100, 0.01, 10, mask, 3, 3, false, 0.04);
+
+        Assert.True(corners.Length > 0);
+    }
+
+    [Fact]
+    public void GoodFeaturesToTrackWithQuality()
+    {
+        using var src = LoadImage("lenna.png", ImreadModes.Grayscale);
+        using var mask = new Mat();
+        using var cornersQuality = new Mat();
+        var corners = Cv2.GoodFeaturesToTrackWithQuality(src, 100, 0.01, 10, mask, cornersQuality);
+
+        Assert.True(corners.Length > 0);
+        Assert.False(cornersQuality.Empty());
+        Assert.Equal(corners.Length, (int)cornersQuality.Total());
+    }
+
+    [Fact]
     public void GrabCut()
     {
         using var color = LoadImage("lenna.png", ImreadModes.Color);
@@ -1474,6 +1524,20 @@ public class ImgProcTest : TestBase
         Cv2.CreateHanningWindow(window, new Size(64, 64), MatType.CV_32F);
 
         var shift = Cv2.PhaseCorrelate(src, src, window, out var response);
+
+        Assert.True(Math.Abs(shift.X) < 1.0 && Math.Abs(shift.Y) < 1.0); // identical inputs -> no shift
+    }
+
+    [Fact]
+    public void PhaseCorrelateIterative()
+    {
+        using var gray = LoadImage("lenna.png", ImreadModes.Grayscale);
+        using var small = new Mat();
+        Cv2.Resize(gray, small, new Size(64, 64));
+        using var src = new Mat();
+        small.ConvertTo(src, MatType.CV_32F);
+
+        var shift = Cv2.PhaseCorrelateIterative(src, src);
 
         Assert.True(Math.Abs(shift.X) < 1.0 && Math.Abs(shift.Y) < 1.0); // identical inputs -> no shift
     }

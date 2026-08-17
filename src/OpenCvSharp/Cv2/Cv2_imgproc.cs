@@ -248,6 +248,21 @@ static partial class Cv2
     }
 
     /// <summary>
+    /// Blurs an image using the stackBlur algorithm, a fast approximation of a Gaussian blur.
+    /// </summary>
+    /// <param name="src">The source image</param>
+    /// <param name="dst">The destination image; will have the same size and the same type as src</param>
+    /// <param name="ksize">The smoothing kernel size (must be positive and odd)</param>
+    public static void StackBlur(InputArray src, OutputArray dst, Size ksize)
+    {
+        NativeMethods.HandleException(
+            NativeMethods.imgproc_stackBlur(src.Proxy, dst.Proxy, ksize));
+
+        GC.KeepAlive(src.Source);
+        GC.KeepAlive(dst.Source);
+    }
+
+    /// <summary>
     /// Convolves an image with the kernel
     /// </summary>
     /// <param name="src">The source image</param>
@@ -592,6 +607,67 @@ static partial class Cv2
                 minDistance, maskPtr, blockSize, useHarrisDetector ? 1 : 0, k));
         GC.KeepAlive(src.Source);
         GC.KeepAlive(mask.Source);
+        return vector.ToArray();
+    }
+
+    /// <summary>
+    /// finds the strong enough corners where the cornerMinEigenVal() or cornerHarris() report the local maxima
+    /// </summary>
+    /// <param name="src">Input 8-bit or floating-point 32-bit, single-channel image.</param>
+    /// <param name="maxCorners">Maximum number of corners to return. If there are more corners than are found,
+    /// the strongest of them is returned.</param>
+    /// <param name="qualityLevel">Parameter characterizing the minimal accepted quality of image corners.</param>
+    /// <param name="minDistance">Minimum possible Euclidean distance between the returned corners.</param>
+    /// <param name="mask">Optional region of interest. If the image is not empty
+    ///  (it needs to have the type CV_8UC1 and the same size as image ), it specifies the region
+    /// in which the corners are detected.</param>
+    /// <param name="blockSize">Size of an average block for computing a derivative covariation matrix over each pixel neighborhood.</param>
+    /// <param name="gradientSize">Aperture parameter for the Sobel operator used for derivatives computation.</param>
+    /// <param name="useHarrisDetector">Parameter indicating whether to use a Harris detector</param>
+    /// <param name="k">Free parameter of the Harris detector.</param>
+    /// <returns>Output vector of detected corners.</returns>
+    public static Point2f[] GoodFeaturesToTrack(InputArray src,
+        int maxCorners, double qualityLevel, double minDistance,
+        InputArray mask, int blockSize, int gradientSize, bool useHarrisDetector, double k)
+    {
+        using var vector = new StdVector<Point2f>();
+        NativeMethods.HandleException(
+            NativeMethods.imgproc_goodFeaturesToTrack_gradientSize(src.Proxy, vector.CvPtr, maxCorners, qualityLevel,
+                minDistance, mask.Proxy, blockSize, gradientSize, useHarrisDetector ? 1 : 0, k));
+        GC.KeepAlive(src.Source);
+        GC.KeepAlive(mask.Source);
+        return vector.ToArray();
+    }
+
+    /// <summary>
+    /// Same as GoodFeaturesToTrack, but returns also quality measure of the detected corners.
+    /// </summary>
+    /// <param name="src">Input 8-bit or floating-point 32-bit, single-channel image.</param>
+    /// <param name="maxCorners">Maximum number of corners to return. If there are more corners than are found,
+    /// the strongest of them is returned.</param>
+    /// <param name="qualityLevel">Parameter characterizing the minimal accepted quality of image corners.</param>
+    /// <param name="minDistance">Minimum possible Euclidean distance between the returned corners.</param>
+    /// <param name="mask">Region of interest. If the image is not empty
+    ///  (it needs to have the type CV_8UC1 and the same size as image ), it specifies the region
+    /// in which the corners are detected.</param>
+    /// <param name="cornersQuality">Output vector of quality measure of the detected corners.</param>
+    /// <param name="blockSize">Size of an average block for computing a derivative covariation matrix over each pixel neighborhood.</param>
+    /// <param name="gradientSize">Aperture parameter for the Sobel operator used for derivatives computation.</param>
+    /// <param name="useHarrisDetector">Parameter indicating whether to use a Harris detector</param>
+    /// <param name="k">Free parameter of the Harris detector.</param>
+    /// <returns>Output vector of detected corners.</returns>
+    public static Point2f[] GoodFeaturesToTrackWithQuality(InputArray src,
+        int maxCorners, double qualityLevel, double minDistance,
+        InputArray mask, OutputArray cornersQuality, int blockSize = 3, int gradientSize = 3,
+        bool useHarrisDetector = false, double k = 0.04)
+    {
+        using var vector = new StdVector<Point2f>();
+        NativeMethods.HandleException(
+            NativeMethods.imgproc_goodFeaturesToTrackWithQuality(src.Proxy, vector.CvPtr, maxCorners, qualityLevel,
+                minDistance, mask.Proxy, cornersQuality.Proxy, blockSize, gradientSize, useHarrisDetector ? 1 : 0, k));
+        GC.KeepAlive(src.Source);
+        GC.KeepAlive(mask.Source);
+        GC.KeepAlive(cornersQuality.Source);
         return vector.ToArray();
     }
 
@@ -1140,6 +1216,25 @@ static partial class Cv2
     }
 
     /// <summary>
+    /// Iterative variant of <see cref="PhaseCorrelate"/> that refines the detected shift over
+    /// multiple iterations for improved sub-pixel accuracy.
+    /// </summary>
+    /// <param name="src1">Source floating point array (CV_32FC1 or CV_64FC1)</param>
+    /// <param name="src2">Source floating point array (CV_32FC1 or CV_64FC1)</param>
+    /// <param name="l2size">Size of the neighborhood used at each iteration.</param>
+    /// <param name="maxIters">Maximum number of iterations.</param>
+    /// <returns>detected phase shift(sub-pixel) between the two arrays.</returns>
+    public static Point2d PhaseCorrelateIterative(InputArray src1, InputArray src2, int l2size = 7, int maxIters = 10)
+    {
+        NativeMethods.HandleException(
+            NativeMethods.imgproc_phaseCorrelateIterative(src1.Proxy, src2.Proxy, l2size, maxIters, out var ret));
+
+        GC.KeepAlive(src1.Source);
+        GC.KeepAlive(src2.Source);
+        return ret;
+    }
+
+    /// <summary>
     /// Computes a Hanning window coefficients in two dimensions.
     /// </summary>
     /// <param name="dst">Destination array to place Hann coefficients in</param>
@@ -1169,6 +1264,28 @@ static partial class Cv2
 
         GC.KeepAlive(src.Source);
         GC.KeepAlive(dst.Source);
+        return ret;
+    }
+
+    /// <summary>
+    /// Applies a fixed-level threshold to each array element, restricted to the pixels selected by mask.
+    /// </summary>
+    /// <param name="src">input array (single-channel, 8-bit or 32-bit floating point).</param>
+    /// <param name="dst">input/output array of the same size and type as src.</param>
+    /// <param name="mask">optional mask; pixels outside the mask keep their original value in dst.</param>
+    /// <param name="thresh">threshold value.</param>
+    /// <param name="maxval">maximum value to use with the THRESH_BINARY and THRESH_BINARY_INV thresholding types.</param>
+    /// <param name="type">thresholding type (see the details below).</param>
+    /// <returns>the computed threshold value when type == OTSU</returns>
+    public static double ThresholdWithMask(
+        InputArray src, InputOutputArray dst, InputArray mask, double thresh, double maxval, ThresholdTypes type)
+    {
+        NativeMethods.HandleException(
+            NativeMethods.imgproc_thresholdWithMask(src.Proxy, dst.Proxy, mask.Proxy, thresh, maxval, (int)type, out var ret));
+
+        GC.KeepAlive(src.Source);
+        GC.KeepAlive(dst.Source);
+        GC.KeepAlive(mask.Source);
         return ret;
     }
 

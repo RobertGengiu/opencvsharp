@@ -1,6 +1,8 @@
 # OpenCvSharp
 
-A cross-platform .NET wrapper for [OpenCV](https://opencv.org/), providing image processing and computer vision functionality.
+A cross-platform .NET wrapper for [OpenCV](https://opencv.org/), providing image processing and computer vision functionality. Its API is intentionally designed to stay as close as practical to the native OpenCV C++ API while using C# conventions such as typed enums, exceptions, and deterministic disposal.
+
+See [OpenCV C++, Python (cv2), and OpenCvSharp](https://shimat.github.io/opencvsharp/articles/getting-started/opencv-api-comparison.html) for the main API and data-model differences.
 
 > This is the **OpenCvSharp5** family (OpenCV 5.x, .NET 8+). If you need .NET Framework, Unity, or another pre-.NET 8 runtime, use the **OpenCvSharp4** family (OpenCV 4.13.0) instead.
 
@@ -10,7 +12,7 @@ A cross-platform .NET wrapper for [OpenCV](https://opencv.org/), providing image
 
 | Platform | Target Framework |
 |---|---|
-| .NET 8.0 or later | `net8.0` |
+| .NET 8.0 or later | `net8.0` (also AvaloniaExtensions, cross-platform) |
 | Windows desktop (.NET 8+) | `net8.0-windows` (WpfExtensions) |
 
 Target OpenCV version: **5.0.x** (with opencv_contrib)
@@ -53,8 +55,9 @@ For more installation options, see [Installation on GitHub](https://github.com/s
 ### Linux (Ubuntu and other distributions)
 The official `OpenCvSharp5.official.runtime.linux-x64` package is built on manylinux_2_28 (glibc 2.28) and works on Ubuntu 20.04+, Debian 10+, RHEL/AlmaLinux 8+, and other Linux distributions.
 
-- **Full package**: uses GTK3 for `highgui` support (`Cv2.ImShow`, `Cv2.WaitKey`, etc.). GTK3 (`libgtk-3.so.0`) is pre-installed on standard Ubuntu/Debian/RHEL environments and typically requires no action. In minimal or container environments where GTK3 is absent, install it manually: Ubuntu/Debian: `apt-get install libgtk-3-0`; RHEL/AlmaLinux: `dnf install gtk3`. Alternatively, use the **slim** package which has no GUI dependencies.
-- **Slim package** (`OpenCvSharp5.official.runtime.linux-x64.slim`): `highgui` is disabled; no GTK3 or other GUI dependencies. Suitable for headless and container environments.
+- **Full package**: uses GTK3 for `highgui` support (`Cv2.ImShow`, `Cv2.WaitKey`, etc.). GTK3 (`libgtk-3.so.0`) is pre-installed on standard Ubuntu/Debian/RHEL environments and typically requires no action. In minimal or container environments where GTK3 is absent, install it manually: Ubuntu/Debian: `apt-get install libgtk-3-0`; RHEL/AlmaLinux: `dnf install gtk3`. Alternatively, use the **headless** or **slim** package below, neither of which has GUI dependencies.
+- **Headless package** (`OpenCvSharp5.official.runtime.linux-x64.headless`): same module set as full (`videoio`, `dnn`, `ml`, `contrib`, `stitching`, `barcode`, ...) but `highgui` is disabled, so it has no GTK3/X11 dependency. Suitable for containerized services that need more than the slim module set (e.g. `VideoCapture`) but never call `highgui`.
+- **Slim package** (`OpenCvSharp5.official.runtime.linux-x64.slim`): `highgui` is disabled and the module set is reduced; no GTK3 or other GUI dependencies. Suitable for headless and container environments.
 
 ### macOS (Intel and Apple Silicon)
 The `OpenCvSharp5.runtime.osx.x64` and `OpenCvSharp5.runtime.osx.arm64` packages provide native bindings for macOS. FFmpeg, Tesseract, Freetype, and all standard OpenCV modules are statically linked.
@@ -104,5 +107,5 @@ using Mat dst = 255 - src * 0.8;
 
 - [GitHub Repository](https://github.com/shimat/opencvsharp)
 - [Code Samples](https://github.com/shimat/opencvsharp_samples/)
-- [API Documentation](https://shimat.github.io/opencvsharp/api/OpenCvSharp.html)
+- [Documentation and API Reference](https://shimat.github.io/opencvsharp/)
 - [Issue Tracker](https://github.com/shimat/opencvsharp/issues)

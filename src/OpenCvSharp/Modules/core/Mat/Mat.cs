@@ -1,7 +1,9 @@
+using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using OpenCvSharp.Internal;
 
 namespace OpenCvSharp;
@@ -79,7 +81,7 @@ public partial class Mat : CvObject
     /// <summary>
     /// </summary>
     /// <param name="m"></param>
-    protected Mat(Mat m)
+    internal Mat(Mat m)
     {
         ArgumentNullException.ThrowIfNull(m);
         m.ThrowIfDisposed();
@@ -201,7 +203,7 @@ public partial class Mat : CvObject
     /// So, when you modify the matrix formed using such a constructor, you also modify the corresponding elements of m . 
     /// If you want to have an independent copy of the sub-array, use Mat.Clone() .</param>
     /// <param name="ranges">Array of selected ranges of m along each dimensionality.</param>
-    public Mat(Mat m, params Range[] ranges)
+    public Mat(Mat m, Range[] ranges)
     {
         ArgumentNullException.ThrowIfNull(m);
         ArgumentNullException.ThrowIfNull(ranges);
@@ -1106,6 +1108,7 @@ public partial class Mat : CvObject
     /// <param name="accessFlags"></param>
     /// <param name="usageFlags"></param>
     /// <returns></returns>
+    [UnsupportedOSPlatform("browser")]
     public UMat GetUMat(AccessFlag accessFlags, UMatUsageFlags usageFlags)
     {
         ThrowIfDisposed();
@@ -1372,7 +1375,7 @@ public partial class Mat : CvObject
     /// <param name="cn">New number of channels. If the parameter is 0, the number of channels remains the same.</param>
     /// <param name="newDims">New number of rows. If the parameter is 0, the number of rows remains the same.</param>
     /// <returns></returns>
-    public Mat Reshape(int cn, params int[] newDims)
+    public Mat Reshape(int cn, int[] newDims)
     {
         ArgumentNullException.ThrowIfNull(newDims);
         ThrowIfDisposed();
@@ -2111,9 +2114,11 @@ public partial class Mat : CvObject
     /// </summary>
     /// <param name="ranges">Array of selected ranges along each array dimension.</param>
     /// <returns></returns>
-    public Mat SubMat(params Range[] ranges)
+    public Mat SubMat(Range[] ranges)
     {
         ArgumentNullException.ThrowIfNull(ranges);
+        if (ranges.Length == 0)
+            throw new ArgumentException("empty ranges", nameof(ranges));
         ThrowIfDisposed();
 
         NativeMethods.HandleException(
@@ -2338,7 +2343,16 @@ public partial class Mat : CvObject
     /// <returns></returns>
     public IntPtr Ptr(params int[] idx)
     {
+        ArgumentNullException.ThrowIfNull(idx);
         ThrowIfDisposed();
+#if DEBUG
+        // cv::Mat::ptr(const int*) reads Dims many ints from idx regardless of the array's
+        // actual length, so a shorter array here would be an out-of-bounds native read.
+        // Dims is itself a P/Invoke call, so this check is DEBUG-only to keep the Release
+        // fast path (matching cv::Mat::ptr's own CV_DbgAssert-only bounds checking) free of it.
+        if (idx.Length < Dims)
+            throw new ArgumentException($"idx.Length ({idx.Length}) must be at least Dims ({Dims})", nameof(idx));
+#endif
         NativeMethods.HandleException(
             NativeMethods.core_Mat_ptrnd(Handle, idx, out var ret));
         // Returns an interior pointer into this Mat; keep it alive for the caller's dereference.
@@ -3029,7 +3043,7 @@ public partial class Mat : CvObject
         
     #region Get/SetArray
 
-    private static readonly Dictionary<Type, int> dataDimensionMap = new()
+    private static readonly FrozenDictionary<Type, int> dataDimensionMap = new Dictionary<Type, int>
     {
         {typeof(byte), 1},
         {typeof(sbyte), 1},
@@ -3075,9 +3089,9 @@ public partial class Mat : CvObject
         {typeof(Vec6i), 6},
         {typeof(Vec6f), 6},
         {typeof(Vec6d), 6},
-    };
+    }.ToFrozenDictionary();
         
-    private static readonly Dictionary<Type, MatType[]> acceptableTypesMap = new()
+    private static readonly FrozenDictionary<Type, MatType[]> acceptableTypesMap = new Dictionary<Type, MatType[]>
     {
         {typeof(byte), [MatType.CV_8SC1, MatType.CV_8UC1] },
         {typeof(sbyte), [MatType.CV_8SC1, MatType.CV_8UC1] },
@@ -3123,7 +3137,7 @@ public partial class Mat : CvObject
         {typeof(Vec6i), [MatType.CV_32SC(6)] },
         {typeof(Vec6f), [MatType.CV_32FC(6)] },
         {typeof(Vec6d), [MatType.CV_64FC(6)] },
-    };
+    }.ToFrozenDictionary();
 
     private void CheckArgumentsForConvert<T>(Array data)
         where T : unmanaged
@@ -3138,7 +3152,7 @@ public partial class Mat : CvObject
             throw new ArgumentException($"Type argument {typeof(T)} is not supported");
 
         var t = Type();
-        if ((data.Length * dataDimension) % t.Channels != 0)
+        if (checked(data.LongLength * dataDimension) % t.Channels != 0)
             throw new OpenCvSharpException(
                 $"Provided data element number ({data.Length}) should be multiple of the Mat channels count ({t.Channels})");
 
@@ -3147,6 +3161,20 @@ public partial class Mat : CvObject
             var isValidDepth = acceptableTypes.Any(type => type == t);
             if (!isValidDepth)
                 throw new OpenCvSharpException("Mat data type is not compatible: " + t);
+        }
+    }
+
+    private unsafe void CheckSourceBufferSize<T>(Array data)
+        where T : unmanaged
+    {
+        var requiredBytes = checked(Total() * ElemSize());
+        var suppliedBytes = checked(data.LongLength * sizeof(T));
+        if (suppliedBytes < requiredBytes)
+        {
+            throw new ArgumentException(
+                $"The source array is too small. At least {requiredBytes} bytes are required, " +
+                $"but only {suppliedBytes} bytes were provided.",
+                nameof(data));
         }
     }
 
@@ -3229,10 +3257,11 @@ public partial class Mat : CvObject
     /// </summary>
     /// <param name="data">Primitive or Vec array to be copied</param>
     /// <returns>Length of copied bytes</returns>
-    public bool SetArray<T>(params T[] data)
+    public bool SetArray<T>(T[] data)
         where T : unmanaged
     {
         CheckArgumentsForConvert<T>(data);
+        CheckSourceBufferSize<T>(data);
 
         unsafe
         {
@@ -3254,6 +3283,7 @@ public partial class Mat : CvObject
         where T : unmanaged
     {
         CheckArgumentsForConvert<T>(data);
+        CheckSourceBufferSize<T>(data);
 
         unsafe
         {
@@ -3276,19 +3306,7 @@ public partial class Mat : CvObject
     /// <param name="ext">Encodes an image into a memory buffer.</param>
     /// <param name="prms">Format-specific parameters.</param>
     /// <returns></returns>
-    public byte[] ToBytes(string ext = ".png", int[]? prms = null)
-    {
-        Cv2.ImEncode(ext, this, out var buf, prms);
-        return buf;
-    }
-
-    /// <summary>
-    /// Encodes an image into a memory buffer.
-    /// </summary>
-    /// <param name="ext">Encodes an image into a memory buffer.</param>
-    /// <param name="prms">Format-specific parameters.</param>
-    /// <returns></returns>
-    public byte[] ToBytes(string ext = ".png", params ImageEncodingParam[] prms)
+    public byte[] ToBytes(string ext = ".png", ImageEncodingParam[]? prms = null)
     {
         Cv2.ImEncode(ext, this, out var buf, prms);
         return buf;
@@ -3300,7 +3318,7 @@ public partial class Mat : CvObject
     /// <param name="ext"></param>
     /// <param name="prms"></param>
     /// <returns></returns>
-    public MemoryStream ToMemoryStream(string ext = ".png", params ImageEncodingParam[] prms)
+    public MemoryStream ToMemoryStream(string ext = ".png", ImageEncodingParam[]? prms = null)
     {
         var bytes = ToBytes(ext, prms);
         return new MemoryStream(bytes, 0, bytes.Length, writable: false, publiclyVisible: true);
@@ -3313,7 +3331,7 @@ public partial class Mat : CvObject
     /// <param name="ext"></param>
     /// <param name="prms"></param>
     /// <returns></returns>
-    public void WriteToStream(Stream stream, string ext = ".png", params ImageEncodingParam[] prms)
+    public void WriteToStream(Stream stream, string ext = ".png", ImageEncodingParam[]? prms = null)
     {
         ArgumentNullException.ThrowIfNull(stream);
         var imageBytes = ToBytes(ext, prms);

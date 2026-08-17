@@ -31,6 +31,10 @@ CVAPI(void) vector_string_delete(std::vector<std::string>* vector)
 {
     delete vector;
 }
+CVAPI(void) vector_string_pushBack(std::vector<std::string>* vector, const char* value)
+{
+    vector->emplace_back(value);
+}
 #pragma endregion
 
 #pragma region Generated blittable std::vector<T> wrappers
@@ -126,6 +130,12 @@ CV_VECTOR_NEW3(KeyPoint, cv::KeyPoint)
 CV_VECTOR_CORE(DMatch, cv::DMatch)
 CV_VECTOR_NEW2(DMatch, cv::DMatch)
 CV_VECTOR_NEW3(DMatch, cv::DMatch)
+
+// cv::Elliptic_KeyPoint is not trivially copyable (virtual destructor), so AffineFeature2D's
+// bridge converts to/from interop::EllipticKeyPoint at the boundary instead of using
+// cv::Elliptic_KeyPoint directly as a vector element.
+CV_VECTOR_CORE(EllipticKeyPoint, interop::EllipticKeyPoint)
+CV_VECTOR_NEW3(EllipticKeyPoint, interop::EllipticKeyPoint)
 
 #undef CV_VECTOR_NEW3
 #undef CV_VECTOR_NEW2
@@ -236,15 +246,6 @@ CVAPI(size_t) vector_ImageFeatures_getSize(
     return vector->size();
 }
 
-CVAPI(void) vector_ImageFeatures_getKeypointsSize(
-    std::vector<cv::detail::ImageFeatures>* vector, size_t *dst)
-{
-    for (size_t i = 0; i < vector->size(); i++) 
-    {
-        dst[i] = vector->at(i).keypoints.size();
-    }
-}
-
 CVAPI(void) vector_ImageFeatures_getElements(
     std::vector<cv::detail::ImageFeatures>* vector, detail_ImageFeatures* dstArray)
 {
@@ -275,6 +276,14 @@ CVAPI(std::vector<cv::line_descriptor::KeyLine>*) vector_KeyLine_new1()
     return new std::vector<cv::line_descriptor::KeyLine>;
 }
 
+CVAPI(std::vector<cv::line_descriptor::KeyLine>*) vector_KeyLine_new2(
+    cv::line_descriptor::KeyLine* data, size_t length)
+{
+    if (length == 0)
+        return new std::vector<cv::line_descriptor::KeyLine>;
+    return new std::vector<cv::line_descriptor::KeyLine>(data, data + length);
+}
+
 CVAPI(size_t) vector_KeyLine_getSize(std::vector<cv::line_descriptor::KeyLine>* vector)
 {
     return vector->size();
@@ -286,6 +295,28 @@ CVAPI(cv::line_descriptor::KeyLine*) vector_KeyLine_getPointer(std::vector<cv::l
 }
 
 CVAPI(void) vector_KeyLine_delete(std::vector<cv::line_descriptor::KeyLine>* vector)
+{
+    delete vector;
+}
+#pragma endregion
+
+#pragma region cv::stereo::MatchQuasiDense
+CVAPI(std::vector<cv::stereo::MatchQuasiDense>*) vector_MatchQuasiDense_new1()
+{
+    return new std::vector<cv::stereo::MatchQuasiDense>;
+}
+
+CVAPI(size_t) vector_MatchQuasiDense_getSize(std::vector<cv::stereo::MatchQuasiDense>* vector)
+{
+    return vector->size();
+}
+
+CVAPI(cv::stereo::MatchQuasiDense*) vector_MatchQuasiDense_getPointer(std::vector<cv::stereo::MatchQuasiDense>* vector)
+{
+    return &(vector->at(0));
+}
+
+CVAPI(void) vector_MatchQuasiDense_delete(std::vector<cv::stereo::MatchQuasiDense>* vector)
 {
     delete vector;
 }

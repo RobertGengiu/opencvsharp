@@ -6,7 +6,7 @@ namespace OpenCvSharp.Tests.Stitching;
 public class FeaturesMatcherTest : TestBase
 {
     [Fact]
-    public void ApplyMultipleImageFeatures()
+    public void BestOf2NearestRangeMatcherApply()
     {
         using var source = LoadImage("lenna.png", ImreadModes.Grayscale);
         var images = new[]
@@ -14,6 +14,40 @@ public class FeaturesMatcherTest : TestBase
             source[new Rect(0, 0, 200, 200)].Clone(),
             source[new Rect(100, 100, 200, 200)].Clone(),
             source[new Rect(200, 0, 200, 200)].Clone(),
+        };
+        try
+        {
+            using var orb = ORB.Create(500);
+            var features = Cv2.Detail.ComputeImageFeatures(orb, images);
+            try
+            {
+                using var matcher = new BestOf2NearestRangeMatcher(rangeWidth: 1);
+                var matches = matcher.Apply(features);
+                Assert.Equal(images.Length * images.Length, matches.Length);
+                foreach (var m in matches)
+                    m.Dispose();
+            }
+            finally
+            {
+                foreach (var f in features)
+                    f.Dispose();
+            }
+        }
+        finally
+        {
+            foreach (var image in images)
+                image.Dispose();
+        }
+    }
+
+    [Fact]
+    public void ApplyMultipleImageFeatures()
+    {
+        using var source = LoadImage("lenna.png", ImreadModes.Grayscale);
+        var images = new[]
+        {
+            source.Clone(),
+            source.Clone(),
         };
         try
         {
@@ -35,6 +69,12 @@ public class FeaturesMatcherTest : TestBase
                     Assert.InRange(m.SrcImgIdx, -1, images.Length - 1);
                     Assert.InRange(m.DstImgIdx, -1, images.Length - 1);
                 }
+
+                var forwardMatch = Assert.Single(
+                    matches, m => m.SrcImgIdx == 0 && m.DstImgIdx == 1);
+                Assert.NotEmpty(forwardMatch.Matches);
+                Assert.True(forwardMatch.NumInliers > 0);
+                Assert.False(forwardMatch.H.Empty());
 
                 foreach (var m in matches)
                     m.Dispose();

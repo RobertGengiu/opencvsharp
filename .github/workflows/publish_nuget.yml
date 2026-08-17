@@ -12,6 +12,10 @@ on:
         type: string
         default: ""
 
+permissions:
+  actions: read
+  contents: read
+
 jobs:
   Prepare:
     runs-on: ubuntu-24.04
@@ -20,7 +24,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Download windows artifact
-        uses: dawidd6/action-download-artifact@v21
+        uses: dawidd6/action-download-artifact@v23
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: windows.yml
@@ -28,7 +32,7 @@ jobs:
           branch: ${{ github.ref_name }}
 
       - name: Download windows arm64 artifact
-        uses: dawidd6/action-download-artifact@v21
+        uses: dawidd6/action-download-artifact@v23
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: windows.yml
@@ -37,7 +41,7 @@ jobs:
 
       - name: Download ubuntu arm64 artifact
         if: ${{ !contains(inputs.skip_platforms, 'linux-arm64') }}
-        uses: dawidd6/action-download-artifact@v21
+        uses: dawidd6/action-download-artifact@v23
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: linux-arm64.yml
@@ -46,7 +50,7 @@ jobs:
 
       - name: Download macos artifact
         if: ${{ !contains(inputs.skip_platforms, 'macos') }}
-        uses: dawidd6/action-download-artifact@v21
+        uses: dawidd6/action-download-artifact@v23
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: macos.yml
@@ -55,7 +59,7 @@ jobs:
 
       - name: Download wasm artifact
         if: ${{ !contains(inputs.skip_platforms, 'wasm') }}
-        uses: dawidd6/action-download-artifact@v21
+        uses: dawidd6/action-download-artifact@v23
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: wasm.yml
@@ -64,7 +68,7 @@ jobs:
 
       - name: Download manylinux artifact
         if: ${{ !contains(inputs.skip_platforms, 'manylinux') }}
-        uses: dawidd6/action-download-artifact@v21
+        uses: dawidd6/action-download-artifact@v23
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: manylinux.yml
@@ -103,6 +107,7 @@ jobs:
           check_package "OpenCvSharp5.5.*.nupkg"
           check_package "OpenCvSharp5.GdipExtensions.*.nupkg"
           check_package "OpenCvSharp5.WpfExtensions.*.nupkg"
+          check_package "OpenCvSharp5.AvaloniaExtensions.*.nupkg"
           check_package "OpenCvSharp5.runtime.win.[0-9]*.nupkg"
           check_package "OpenCvSharp5.runtime.win-arm64.[0-9]*.nupkg"
           check_package "OpenCvSharp5.runtime.win-arm64.slim.*.nupkg"
@@ -127,6 +132,7 @@ jobs:
             echo "skip_platforms: skipping manylinux package checks"
           else
             check_package "OpenCvSharp5.official.runtime.linux-x64.[0-9]*.nupkg"
+            check_package "OpenCvSharp5.official.runtime.linux-x64.headless.*.nupkg"
             check_package "OpenCvSharp5.official.runtime.linux-x64.slim.*.nupkg"
           fi
 
@@ -221,8 +227,66 @@ jobs:
             *.snupkg
           retention-days: 7
 
-  Publish:
+  # ---------------------------------------------------------------------------
+  # Consume the actual, about-to-be-published .nupkg files as a real PackageReference
+  # (against a local feed, not a ProjectReference against source) before anything gets
+  # pushed to nuget.org. Catches packaging mistakes - wrong RID asset placement, a missing
+  # native library, a broken dependency graph - that the source-level "test" jobs in
+  # windows.yml/manylinux.yml/macos.yml never exercise, since those only ever run against
+  # loose build output with the native binary copied in by hand.
+  # ---------------------------------------------------------------------------
+  PackageSmokeTest:
+    name: Package smoke test (${{ matrix.os }})
     needs: Prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            runtime_package: OpenCvSharp5.Windows
+          - os: ubuntu-latest
+            runtime_package: OpenCvSharp5.official.runtime.linux-x64
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download release packages
+        uses: actions/download-artifact@v8
+        with:
+          name: release-packages
+          path: release-packages
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Determine package version
+        id: version
+        shell: bash
+        run: |
+          file=$(ls release-packages/OpenCvSharp5.[0-9]*.nupkg | head -1)
+          name=$(basename "$file")
+          version=${name#OpenCvSharp5.}
+          version=${version%.nupkg}
+          echo "Package version under test: $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Run package smoke test
+        shell: bash
+        env:
+          SMOKE_TEST_VERSION: ${{ steps.version.outputs.version }}
+          SMOKE_TEST_RUNTIME_PACKAGE: ${{ matrix.runtime_package }}
+        run: |
+          cd test/OpenCvSharp.PackageSmokeTest
+          dotnet run -c Release \
+            -p:RestoreAdditionalProjectSources="$GITHUB_WORKSPACE/release-packages" \
+            -p:SmokeTestPackageVersion="$SMOKE_TEST_VERSION" \
+            -p:SmokeTestRuntimePackage="$SMOKE_TEST_RUNTIME_PACKAGE"
+
+  Publish:
+    needs: [Prepare, PackageSmokeTest]
     runs-on: ubuntu-24.04
     environment: nuget-production
 

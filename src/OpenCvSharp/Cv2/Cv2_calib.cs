@@ -99,7 +99,7 @@ static partial class Cv2
     /// ( patternSize = Size(points_per_row,points_per_colum) = Size(columns, rows) ).</param>
     /// <param name="corners">Output array of detected corners.</param>
     /// <param name="flags">Various operation flags that can be zero or a combination of the ChessboardFlag values</param>
-    /// <returns>The function returns true if all of the corners are found and they are placed in a certain order (row by row, left to right in every row). 
+    /// <returns>The function returns true if all of the corners are found and they are placed in a certain order (row by row, left to right in every row).
     /// Otherwise, if the function fails to find all the corners or reorder them, it returns false.</returns>
     public static bool FindChessboardCorners(
         InputArray image,
@@ -168,6 +168,61 @@ static partial class Cv2
     }
 
     /// <summary>
+    /// Finds centers in the grid of circles, using custom finder parameters.
+    /// </summary>
+    /// <param name="image">grid view of input circles; it must be an 8-bit grayscale or color image.</param>
+    /// <param name="patternSize">number of circles per row and column ( patternSize = Size(points_per_row, points_per_colum) ).</param>
+    /// <param name="centers">output array of detected centers.</param>
+    /// <param name="flags">various operation flags that can be one of the FindCirclesGridFlag values</param>
+    /// <param name="blobDetector">feature detector that finds blobs like dark circles on light background. If null, SimpleBlobDetector is used.</param>
+    /// <param name="parameters">struct for finding circles in a grid pattern.</param>
+    /// <returns></returns>
+    public static bool FindCirclesGrid(
+        InputArray image,
+        Size patternSize,
+        OutputArray centers,
+        FindCirclesGridFlags flags,
+        FeatureDetector? blobDetector,
+        in CirclesGridFinderParameters parameters)
+    {
+        NativeMethods.HandleException(
+            NativeMethods.calib_findCirclesGrid_InputArray_Params(
+                image.Proxy, patternSize, centers.Proxy, (int) flags, ToPtr(blobDetector), parameters, out var ret));
+        GC.KeepAlive(image.Source);
+        GC.KeepAlive(centers.Source);
+        GC.KeepAlive(blobDetector);
+        return ret != 0;
+    }
+
+    /// <summary>
+    /// Finds centers in the grid of circles, using custom finder parameters.
+    /// </summary>
+    /// <param name="image">grid view of input circles; it must be an 8-bit grayscale or color image.</param>
+    /// <param name="patternSize">number of circles per row and column ( patternSize = Size(points_per_row, points_per_colum) ).</param>
+    /// <param name="centers">output array of detected centers.</param>
+    /// <param name="flags">various operation flags that can be one of the FindCirclesGridFlag values</param>
+    /// <param name="blobDetector">feature detector that finds blobs like dark circles on light background. If null, SimpleBlobDetector is used.</param>
+    /// <param name="parameters">struct for finding circles in a grid pattern.</param>
+    /// <returns></returns>
+    public static bool FindCirclesGrid(
+        InputArray image,
+        Size patternSize,
+        out Point2f[] centers,
+        FindCirclesGridFlags flags,
+        FeatureDetector? blobDetector,
+        in CirclesGridFinderParameters parameters)
+    {
+        using var centersVec = new StdVector<Point2f>();
+        NativeMethods.HandleException(
+            NativeMethods.calib_findCirclesGrid_vector_Params(
+                image.Proxy, patternSize, centersVec.CvPtr, (int) flags, ToPtr(blobDetector), parameters, out var ret));
+        GC.KeepAlive(image.Source);
+        GC.KeepAlive(blobDetector);
+        centers = centersVec.ToArray();
+        return ret != 0;
+    }
+
+    /// <summary>
     /// finds intrinsic and extrinsic camera parameters from several fews of a known calibration pattern.
     /// </summary>
     /// <param name="objectPoints">In the new interface it is a vector of vectors of calibration pattern points in the calibration pattern coordinate space. 
@@ -179,13 +234,13 @@ static partial class Cv2
     /// <param name="imagePoints">In the new interface it is a vector of vectors of the projections of calibration pattern points. 
     /// imagePoints.Count() and objectPoints.Count() and imagePoints[i].Count() must be equal to objectPoints[i].Count() for each i.</param>
     /// <param name="imageSize">Size of the image used only to initialize the intrinsic camera matrix.</param>
-    /// <param name="cameraMatrix">Output 3x3 floating-point camera matrix. 
-    /// If CV_CALIB_USE_INTRINSIC_GUESS and/or CV_CALIB_FIX_ASPECT_RATIO are specified, some or all of fx, fy, cx, cy must be 
+    /// <param name="cameraMatrix">Input/output 3x3 floating-point camera matrix.
+    /// If CV_CALIB_USE_INTRINSIC_GUESS and/or CV_CALIB_FIX_ASPECT_RATIO are specified, some or all of fx, fy, cx, cy must be
     /// initialized before calling the function.</param>
-    /// <param name="distCoeffs">Output vector of distortion coefficients (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]]) of 4, 5, or 8 elements.</param>
-    /// <param name="rvecs">Output vector of rotation vectors (see Rodrigues() ) estimated for each pattern view. That is, each k-th rotation vector 
-    /// together with the corresponding k-th translation vector (see the next output parameter description) brings the calibration pattern 
-    /// from the model coordinate space (in which object points are specified) to the world coordinate space, that is, a real position of the 
+    /// <param name="distCoeffs">Input/output vector of distortion coefficients (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]]) of 4, 5, or 8 elements.</param>
+    /// <param name="rvecs">Output vector of rotation vectors (see Rodrigues() ) estimated for each pattern view. That is, each k-th rotation vector
+    /// together with the corresponding k-th translation vector (see the next output parameter description) brings the calibration pattern
+    /// from the model coordinate space (in which object points are specified) to the world coordinate space, that is, a real position of the
     /// calibration pattern in the k-th pattern view (k=0.. M -1)</param>
     /// <param name="tvecs">Output vector of translation vectors estimated for each pattern view.</param>
     /// <param name="flags">Different flags that may be zero or a combination of the CalibrationFlag values</param>
@@ -216,7 +271,7 @@ static partial class Cv2
         NativeMethods.HandleException(
             NativeMethods.calib_calibrateCamera_InputArray(
                 objectPointsPtrs, objectPointsPtrs.Length,
-                imagePointsPtrs, objectPointsPtrs.Length,
+                imagePointsPtrs, imagePointsPtrs.Length,
                 imageSize, cameraMatrix.Proxy, distCoeffs.Proxy,
                 rvecsVec.CvPtr, tvecsVec.CvPtr, (int) flags, criteria0, out var ret));
         GC.KeepAlive(cameraMatrix.Source);
@@ -241,13 +296,13 @@ static partial class Cv2
     /// <param name="imagePoints">In the new interface it is a vector of vectors of the projections of calibration pattern points. 
     /// imagePoints.Count() and objectPoints.Count() and imagePoints[i].Count() must be equal to objectPoints[i].Count() for each i.</param>
     /// <param name="imageSize">Size of the image used only to initialize the intrinsic camera matrix.</param>
-    /// <param name="cameraMatrix">Output 3x3 floating-point camera matrix. 
-    /// If CV_CALIB_USE_INTRINSIC_GUESS and/or CV_CALIB_FIX_ASPECT_RATIO are specified, some or all of fx, fy, cx, cy must be 
+    /// <param name="cameraMatrix">Input/output 3x3 floating-point camera matrix.
+    /// If CV_CALIB_USE_INTRINSIC_GUESS and/or CV_CALIB_FIX_ASPECT_RATIO are specified, some or all of fx, fy, cx, cy must be
     /// initialized before calling the function.</param>
-    /// <param name="distCoeffs">Output vector of distortion coefficients (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]]) of 4, 5, or 8 elements.</param>
-    /// <param name="rvecs">Output vector of rotation vectors (see Rodrigues() ) estimated for each pattern view. That is, each k-th rotation vector 
-    /// together with the corresponding k-th translation vector (see the next output parameter description) brings the calibration pattern 
-    /// from the model coordinate space (in which object points are specified) to the world coordinate space, that is, a real position of the 
+    /// <param name="distCoeffs">Input/output vector of distortion coefficients (k_1, k_2, p_1, p_2[, k_3[, k_4, k_5, k_6]]) of 4, 5, or 8 elements.</param>
+    /// <param name="rvecs">Output vector of rotation vectors (see Rodrigues() ) estimated for each pattern view. That is, each k-th rotation vector
+    /// together with the corresponding k-th translation vector (see the next output parameter description) brings the calibration pattern
+    /// from the model coordinate space (in which object points are specified) to the world coordinate space, that is, a real position of the
     /// calibration pattern in the k-th pattern view (k=0.. M -1)</param>
     /// <param name="tvecs">Output vector of translation vectors estimated for each pattern view.</param>
     /// <param name="flags">Different flags that may be zero or a combination of the CalibrationFlag values</param>
@@ -293,6 +348,66 @@ static partial class Cv2
                 return ret;
             }
         }
+    }
+
+    /// <summary>
+    /// Finds intrinsic and extrinsic camera parameters, additionally allowing one point of the
+    /// calibration pattern object to be optimized ("releasing object" method). Useful when the
+    /// calibration pattern is not perfectly rigid/planar.
+    /// </summary>
+    /// <param name="objectPoints">Vector of vectors of calibration pattern points, as in CalibrateCamera.</param>
+    /// <param name="imagePoints">Vector of vectors of the projections of calibration pattern points.</param>
+    /// <param name="imageSize">Size of the image used only to initialize the intrinsic camera matrix.</param>
+    /// <param name="iFixedPoint">The index of the object point to be fixed. It must be within [1, objectPoints[0].Count - 2].
+    /// It is ignored with <see cref="CalibrationFlags.FixK3"/> or if the calibration pattern is a non-planar rig.</param>
+    /// <param name="cameraMatrix">Output 3x3 floating-point camera matrix.</param>
+    /// <param name="distCoeffs">Output vector of distortion coefficients.</param>
+    /// <param name="rvecs">Output vector of rotation vectors estimated for each pattern view.</param>
+    /// <param name="tvecs">Output vector of translation vectors estimated for each pattern view.</param>
+    /// <param name="newObjPoints">The updated output vector of calibration pattern points, where the coordinates
+    /// of the fixed point (index iFixedPoint) are unchanged.</param>
+    /// <param name="flags">Different flags that may be zero or a combination of the CalibrationFlag values</param>
+    /// <param name="criteria">Termination criteria for the iterative optimization algorithm.</param>
+    /// <returns>Root mean square (RMS) re-projection error.</returns>
+    public static double CalibrateCameraRO(
+        IEnumerable<Mat> objectPoints,
+        IEnumerable<Mat> imagePoints,
+        Size imageSize,
+        int iFixedPoint,
+        InputOutputArray cameraMatrix,
+        InputOutputArray distCoeffs,
+        out Mat[] rvecs,
+        out Mat[] tvecs,
+        OutputArray newObjPoints,
+        CalibrationFlags flags = CalibrationFlags.None,
+        TermCriteria? criteria = null)
+    {
+        ArgumentNullException.ThrowIfNull(objectPoints);
+        ArgumentNullException.ThrowIfNull(imagePoints);
+
+        var criteria0 = criteria.GetValueOrDefault(
+            new TermCriteria(CriteriaTypes.Count | CriteriaTypes.Eps, 30, Double.Epsilon));
+
+        var objectPointsPtrs = objectPoints.Select(x => x.CvPtr).ToArray();
+        var imagePointsPtrs = imagePoints.Select(x => x.CvPtr).ToArray();
+
+        using var rvecsVec = new VectorOfMat();
+        using var tvecsVec = new VectorOfMat();
+        NativeMethods.HandleException(
+            NativeMethods.calib_calibrateCameraRO_InputArray(
+                objectPointsPtrs, objectPointsPtrs.Length,
+                imagePointsPtrs, imagePointsPtrs.Length,
+                imageSize, iFixedPoint, cameraMatrix.Proxy, distCoeffs.Proxy,
+                rvecsVec.CvPtr, tvecsVec.CvPtr, newObjPoints.Proxy, (int) flags, criteria0, out var ret));
+        GC.KeepAlive(cameraMatrix.Source);
+        GC.KeepAlive(distCoeffs.Source);
+        GC.KeepAlive(newObjPoints.Source);
+        GC.KeepAlive(objectPoints);
+        GC.KeepAlive(imagePoints);
+        rvecs = rvecsVec.ToArray();
+        tvecs = tvecsVec.ToArray();
+
+        return ret;
     }
 
     /// <summary>

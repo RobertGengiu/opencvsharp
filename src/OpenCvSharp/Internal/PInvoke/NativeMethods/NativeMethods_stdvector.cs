@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using OpenCvSharp.Detail;
+using OpenCvSharp.LineDescriptor;
 
 #pragma warning disable 1591
 #pragma warning disable CA1401 // P/Invokes should not be visible
@@ -272,6 +273,18 @@ static partial class NativeMethods
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial void vector_DMatch_delete(IntPtr vector);
     #endregion
+    #region interop::EllipticKeyPoint
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial IntPtr vector_EllipticKeyPoint_new1();
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial IntPtr vector_EllipticKeyPoint_new3([In] XFeatures2D.EllipticKeyPoint[] data, nuint dataLength);
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial nuint vector_EllipticKeyPoint_getSize(OpenCvSafeHandle vector);
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial IntPtr vector_EllipticKeyPoint_getPointer(OpenCvSafeHandle vector);
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial void vector_EllipticKeyPoint_delete(IntPtr vector);
+    #endregion
     #region cv::Mat
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial IntPtr vector_Mat_new1();
@@ -321,10 +334,6 @@ static partial class NativeMethods
     public static partial nuint vector_ImageFeatures_getSize(OpenCvSafeHandle vector);
 
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    public static partial void vector_ImageFeatures_getKeypointsSize(
-        OpenCvSafeHandle vector, [Out] nuint[] dst);
-
-    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial void vector_ImageFeatures_getElements(OpenCvSafeHandle vector, [Out] WImageFeatures[] dst);
         
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -336,6 +345,9 @@ static partial class NativeMethods
     public static partial IntPtr vector_KeyLine_new1();
 
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static unsafe partial IntPtr vector_KeyLine_new2(KeyLine* data, nuint length);
+
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial nuint vector_KeyLine_getSize(OpenCvSafeHandle vector);
 
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -343,6 +355,19 @@ static partial class NativeMethods
 
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial void vector_KeyLine_delete(IntPtr vector);
+    #endregion
+    #region cv::stereo::MatchQuasiDense
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial IntPtr vector_MatchQuasiDense_new1();
+
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial nuint vector_MatchQuasiDense_getSize(OpenCvSafeHandle vector);
+
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial IntPtr vector_MatchQuasiDense_getPointer(OpenCvSafeHandle vector);
+
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial void vector_MatchQuasiDense_delete(IntPtr vector);
     #endregion
 
     #region vector<uchar>
@@ -450,6 +475,9 @@ static partial class NativeMethods
 
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial void vector_string_delete(IntPtr vector);
+
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial void vector_string_pushBack(OpenCvSafeHandle vector, [MarshalAs(UnmanagedType.LPStr)] string value);
     #endregion
     #region vector<cv::line_descriptor::KeyLine>
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]

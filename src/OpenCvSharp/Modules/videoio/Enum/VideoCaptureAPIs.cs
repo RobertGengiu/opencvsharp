@@ -67,19 +67,9 @@ public enum VideoCaptureAPIs
     PVAPI = 800, 
 
     /// <summary>
-    /// OpenNI (for Kinect)
-    /// </summary>
-    OPENNI = 900, 
-
-    /// <summary>
-    /// OpenNI (for Asus Xtion)
-    /// </summary>
-    OPENNI_ASUS = 910, 
-
-    /// <summary>
     /// Android - not used
     /// </summary>
-    ANDROID = 1000, 
+    ANDROID = 1000,
 
     /// <summary>
     /// XIMEA Camera API
@@ -92,14 +82,9 @@ public enum VideoCaptureAPIs
     AVFOUNDATION = 1200, 
 
     /// <summary>
-    /// Smartek Giganetix GigEVisionSDK
-    /// </summary>
-    GIGANETIX = 1300, 
-
-    /// <summary>
     /// Microsoft Media Foundation (via videoInput)
     /// </summary>
-    MSMF = 1400, 
+    MSMF = 1400,
 
     /// <summary>
     /// Microsoft Windows Runtime using Media Foundation
@@ -126,12 +111,17 @@ public enum VideoCaptureAPIs
     /// <summary>
     /// OpenNI2 (for Asus Xtion and Occipital Structure sensors)
     /// </summary>
-    OPENNI2_ASUS = 1610, 
+    OPENNI2_ASUS = 1610,
+
+    /// <summary>
+    /// OpenNI2 (for Orbbec Astra)
+    /// </summary>
+    OPENNI2_ASTRA = 1620,
 
     /// <summary>
     /// gPhoto2 connection
     /// </summary>
-    GPHOTO2 = 1700, 
+    GPHOTO2 = 1700,
 
     /// <summary>
     /// GStreamer
@@ -172,4 +162,11 @@ public enum VideoCaptureAPIs
     /// uEye Camera API
     /// </summary>
     CAP_UEYE = 2500,
+
+    /// <summary>
+    /// For Orbbec 3D-Sensor device/module (Astra+, Femto, Astra2, Gemini2, Gemini2L, Gemini2XL, Gemini330, Femto Mega)
+    /// attention: Astra2 cameras currently only support Windows and Linux kernel versions no higher than 4.15,
+    /// and higher versions of Linux kernel may have exceptions.
+    /// </summary>
+    OBSENSOR = 2600,
 }

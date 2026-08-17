@@ -43,12 +43,37 @@ static partial class NativeMethods
         out int returnValue);
 
     [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial ExceptionStatus calib_findCirclesGrid_InputArray_Params(
+        in InputArrayProxy image, Size patternSize,
+        in OutputArrayProxy centers, int flags, IntPtr blobDetector,
+        in CirclesGridFinderParameters parameters,
+        out int returnValue);
+
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial ExceptionStatus calib_findCirclesGrid_vector_Params(
+        in InputArrayProxy image, Size patternSize,
+        IntPtr centers, int flags, IntPtr blobDetector,
+        in CirclesGridFinderParameters parameters,
+        out int returnValue);
+
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial ExceptionStatus calib_calibrateCamera_InputArray(
         IntPtr[] objectPoints, int objectPointsSize,
         IntPtr[] imagePoints, int imagePointsSize,
         Size imageSize,
         in InputOutputArrayProxy cameraMatrix,in InputOutputArrayProxy distCoeffs,
         IntPtr rvecs, IntPtr tvecs,
+        int flags, TermCriteria criteria,
+        out double returnValue);
+
+    [LibraryImport(DllExtern), UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial ExceptionStatus calib_calibrateCameraRO_InputArray(
+        IntPtr[] objectPoints, int objectPointsSize,
+        IntPtr[] imagePoints, int imagePointsSize,
+        Size imageSize, int iFixedPoint,
+        in InputOutputArrayProxy cameraMatrix, in InputOutputArrayProxy distCoeffs,
+        IntPtr rvecs, IntPtr tvecs,
+        in OutputArrayProxy newObjPoints,
         int flags, TermCriteria criteria,
         out double returnValue);
 

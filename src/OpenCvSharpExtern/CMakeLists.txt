@@ -63,6 +63,17 @@ endif()
 
 find_package(OpenCV REQUIRED)
 
+# OpenCV's installed package exposes built modules as imported targets, but it
+# does not propagate the HAVE_OPENCV_* macros used by OpenCV's own build. Mirror
+# those two module-presence macros so the bindings stay disabled in slim/WASM
+# profiles where the corresponding targets are absent.
+if(TARGET opencv_structured_light)
+	add_compile_definitions(HAVE_OPENCV_STRUCTURED_LIGHT)
+endif()
+if(TARGET opencv_surface_matching)
+	add_compile_definitions(HAVE_OPENCV_SURFACE_MATCHING)
+endif()
+
 # iconv support isn't automatic on some systems
 find_package(Iconv QUIET)
 if(NOT Iconv_FOUND)
@@ -83,6 +94,21 @@ if(OpenCV_FOUND)
 	else()
 		add_library(OpenCvSharpExtern SHARED ${OPENCVSHARP_FILES})
 		target_link_libraries(OpenCvSharpExtern ${OpenCV_LIBRARIES})
+
+		if(UNIX AND NOT APPLE)
+			# Drop NEEDED entries for libraries that are passed on the link line by some static
+			# 3rd-party dependency (e.g. libatomic.so.1) but whose symbols are never actually
+			# referenced by the resulting binary. See issue #2065.
+			target_link_options(OpenCvSharpExtern PRIVATE -Wl,--as-needed)
+
+			# FFmpeg's optimized x86-64 assembly uses direct PC-relative references to global
+			# constants. Keep the statically linked FFmpeg implementation private so those
+			# references bind locally when producing this shared library. See issue #2085.
+			foreach(ffmpeg_archive IN ITEMS libavcodec.a libavformat.a libavutil.a libswscale.a)
+				target_link_options(OpenCvSharpExtern PRIVATE
+					"-Wl,--exclude-libs,${ffmpeg_archive}")
+			endforeach()
+		endif()
 	endif()
 
 	if(Iconv_FOUND)
@@ -125,10 +151,9 @@ if(OpenCV_FOUND)
 			COMMENT "Copying OpenCvSharpExtern.dll to test project"
 		)
 
-		# Derive the OpenCV install root from the cmake config path (lib/cmake/opencv4 → root)
-		get_filename_component(OPENCV_INSTALL_PREFIX "${OpenCV_DIR}/../../.." ABSOLUTE)
 		set(OPENCV_VER_STR "${OpenCV_VERSION_MAJOR}${OpenCV_VERSION_MINOR}${OpenCV_VERSION_PATCH}")
-		set(OPENCV_FFMPEG_DLL "${OPENCV_INSTALL_PREFIX}/bin/opencv_videoio_ffmpeg${OPENCV_VER_STR}_64.dll")
+		set(OPENCV_FFMPEG_DLL
+			"${OpenCV_INSTALL_PATH}/${OpenCV_ARCH}/${OpenCV_RUNTIME}/bin/opencv_videoio_ffmpeg${OPENCV_VER_STR}_64.dll")
 
 		if(EXISTS "${OPENCV_FFMPEG_DLL}")
 			add_custom_command(TARGET OpenCvSharpExtern POST_BUILD

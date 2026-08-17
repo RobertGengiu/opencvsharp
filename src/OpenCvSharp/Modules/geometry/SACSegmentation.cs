@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using OpenCvSharp.Internal;
 
@@ -5,13 +6,6 @@ using OpenCvSharp.Internal;
 // ReSharper disable IdentifierTypo
 
 namespace OpenCvSharp;
-
-/// <summary>
-/// The native-shaped (double*, length) form of <see cref="SACSegmentation.ModelConstraintFunction"/>,
-/// used to marshal the callback across the P/Invoke boundary.
-/// </summary>
-[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-public delegate int SacModelConstraintNativeCallback(IntPtr coefficients, int length);
 
 /// <summary>
 /// Sample Consensus algorithm segmentation of 3D point cloud model.
@@ -29,14 +23,33 @@ public class SACSegmentation : Algorithm
     /// </param>
     public delegate bool ModelConstraintFunction(double[] modelCoefficients);
 
-    // Roots the native-shaped delegate for the lifetime of this instance so the GC does not collect it
-    // while native code may still invoke the callback during Segment().
-    private SacModelConstraintNativeCallback? customModelConstraintsNative;
+    private sealed class ConstraintCallbackRegistration : IDisposable
+    {
+        private GCHandle handle;
+
+        public IntPtr UserData => GCHandle.ToIntPtr(handle);
+
+        public ConstraintCallbackRegistration(ModelConstraintFunction callback)
+        {
+            handle = GCHandle.Alloc(callback);
+        }
+
+        public void Dispose()
+        {
+            if (handle.IsAllocated)
+                handle.Free();
+        }
+    }
+
+    // The holder is released by the owning SafeHandle after the native SACSegmentation is deleted.
+    private readonly object constraintCallbackSync = new();
+    private readonly DisposableObjectHolder<ConstraintCallbackRegistration> constraintCallbackHolder = new();
     private ModelConstraintFunction? customModelConstraints;
 
     private SACSegmentation(IntPtr smartPtr, IntPtr rawPtr)
         : base(smartPtr, rawPtr, p => NativeMethods.HandleException(NativeMethods.geometry_Ptr_SACSegmentation_delete(p)))
     {
+        SetPostReleaseAction(constraintCallbackHolder.Dispose);
     }
 
     /// <summary>
@@ -269,18 +282,32 @@ public class SACSegmentation : Algorithm
     {
         ThrowIfDisposed();
 
-        this.customModelConstraints = customModelConstraints;
-        customModelConstraintsNative = customModelConstraints is null
-            ? null
-            : (coefficients, length) =>
-            {
-                var managedCoefficients = new double[length];
-                Marshal.Copy(coefficients, managedCoefficients, 0, length);
-                return customModelConstraints(managedCoefficients) ? 1 : 0;
-            };
+        ConstraintCallbackRegistration? newRegistration = null;
+        var callbackPtr = IntPtr.Zero;
+        var userData = IntPtr.Zero;
+        if (customModelConstraints is not null)
+        {
+            newRegistration = new ConstraintCallbackRegistration(customModelConstraints);
+            callbackPtr = GetConstraintTrampolinePointer();
+            userData = newRegistration.UserData;
+        }
 
-        NativeMethods.HandleException(
-            NativeMethods.geometry_SACSegmentation_setCustomModelConstraints(Handle, customModelConstraintsNative));
+        lock (constraintCallbackSync)
+        {
+            try
+            {
+                NativeMethods.HandleException(
+                    NativeMethods.geometry_SACSegmentation_setCustomModelConstraints(Handle, callbackPtr, userData));
+            }
+            catch
+            {
+                newRegistration?.Dispose();
+                throw;
+            }
+
+            constraintCallbackHolder.Replace(newRegistration);
+            this.customModelConstraints = customModelConstraints;
+        }
     }
 
     /// <summary>
@@ -292,4 +319,26 @@ public class SACSegmentation : Algorithm
         ThrowIfDisposed();
         return customModelConstraints;
     }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    private static int ModelConstraintTrampoline(IntPtr userData, IntPtr coefficients, int length)
+    {
+        try
+        {
+            var constraint = (ModelConstraintFunction)GCHandle.FromIntPtr(userData).Target!;
+            var managedCoefficients = new double[length];
+            Marshal.Copy(coefficients, managedCoefficients, 0, length);
+            return constraint(managedCoefficients) ? 1 : 0;
+        }
+        catch
+        {
+            // Exceptions must never unwind into native code from an UnmanagedCallersOnly method;
+            // fail safe by rejecting the model.
+            return 0;
+        }
+    }
+
+    private static unsafe IntPtr GetConstraintTrampolinePointer() =>
+        (IntPtr)(delegate* unmanaged[Cdecl]<IntPtr, IntPtr, int, int>)&ModelConstraintTrampoline;
+
 }

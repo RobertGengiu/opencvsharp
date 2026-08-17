@@ -13,6 +13,7 @@ on:
 env:
   OPENCV_VERSION: 5.0.0
   CACHE_VERSION: "1"
+  MEDIAMTX_VERSION: 1.19.3
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -40,7 +41,13 @@ jobs:
       # -- vcpkg (image libs) --------------------------------------------------
       - name: Bootstrap vcpkg
         run: |
-          git clone --filter=blob:none https://github.com/microsoft/vcpkg.git /tmp/vcpkg
+          set -euo pipefail
+          vcpkg_commit="$(sed -n 's/.*"builtin-baseline": *"\([^"]*\)".*/\1/p' "${GITHUB_WORKSPACE}/vcpkg.json")"
+          test -n "${vcpkg_commit}"
+          git init /tmp/vcpkg
+          git -C /tmp/vcpkg remote add origin https://github.com/microsoft/vcpkg.git
+          git -C /tmp/vcpkg fetch --depth 1 origin "${vcpkg_commit}"
+          git -C /tmp/vcpkg checkout --detach FETCH_HEAD
           /tmp/vcpkg/bootstrap-vcpkg.sh -disableMetrics
 
       - name: Restore vcpkg package cache
@@ -194,7 +201,13 @@ jobs:
       # -- vcpkg (image libs) --------------------------------------------------
       - name: Bootstrap vcpkg
         run: |
-          git clone --filter=blob:none https://github.com/microsoft/vcpkg.git /tmp/vcpkg
+          set -euo pipefail
+          vcpkg_commit="$(sed -n 's/.*"builtin-baseline": *"\([^"]*\)".*/\1/p' "${GITHUB_WORKSPACE}/vcpkg.json")"
+          test -n "${vcpkg_commit}"
+          git init /tmp/vcpkg
+          git -C /tmp/vcpkg remote add origin https://github.com/microsoft/vcpkg.git
+          git -C /tmp/vcpkg fetch --depth 1 origin "${vcpkg_commit}"
+          git -C /tmp/vcpkg checkout --detach FETCH_HEAD
           /tmp/vcpkg/bootstrap-vcpkg.sh -disableMetrics
 
       - name: Restore vcpkg package cache
@@ -330,7 +343,7 @@ jobs:
       # Folded into this job: runs against the just-built dylib, avoiding a
       # separate runner and an artifact upload/download round-trip.
       - name: Install .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
 
@@ -342,8 +355,36 @@ jobs:
           cp ${GITHUB_WORKSPACE}/libOpenCvSharpExtern.dylib ./
           sudo mkdir -p /usr/local/lib
           sudo cp ${GITHUB_WORKSPACE}/libOpenCvSharpExtern.dylib /usr/local/lib/
+          # --blame-crash* collects a full memory dump and a Sequence_*.xml (listing tests executed,
+          # in order) into TestResults\ if the test host crashes, so an intermittent native crash
+          # (e.g. the dynafu::WarpField SIGSEGV) can be attributed to a specific test without a
+          # re-run. See "Upload crash dumps on failure" below (separate from the .ips upload above).
           DYLD_LIBRARY_PATH=/usr/local/lib:${GITHUB_WORKSPACE}/test/OpenCvSharp.Tests dotnet test OpenCvSharp.Tests.csproj -c Release -f net10.0 --runtime osx-arm64 \
-            --logger "trx;LogFileName=test-results.trx" < /dev/null
+            --logger "trx;LogFileName=test-results.trx" \
+            --blame-crash --blame-crash-dump-type full < /dev/null
+
+      - name: Test RTSP capture
+        uses: ./.github/actions/test-rtsp-macos
+        with:
+          mediamtx-version: ${{ env.MEDIAMTX_VERSION }}
+
+      - name: Test Avalonia extensions
+        run: |
+          cd ${GITHUB_WORKSPACE}/test/OpenCvSharp.Tests.Avalonia
+          dotnet build -c Release -f net10.0
+          cp ${GITHUB_WORKSPACE}/libOpenCvSharpExtern.dylib bin/Release/net10.0/
+          DYLD_LIBRARY_PATH=/usr/local/lib:${GITHUB_WORKSPACE}/test/OpenCvSharp.Tests.Avalonia dotnet test OpenCvSharp.Tests.Avalonia.csproj -c Release -f net10.0 --runtime osx-arm64 < /dev/null
+
+      - name: Test NativeAOT publish
+        run: |
+          cd ${GITHUB_WORKSPACE}/test/OpenCvSharp.Tests.NativeAot
+          # Restore and publish as separate steps: see windows.yml's "Test NativeAOT publish"
+          # step for why a combined restore+publish invocation fails restore with NETSDK1207
+          # (NuGet's static graph restore doesn't honor the OpenCvSharp.Analyzers ProjectReference's
+          # UndefineProperties the way an actual build does).
+          dotnet restore -r osx-arm64
+          dotnet publish -c Release -f net10.0 --runtime osx-arm64 -p:PublishAot=true --no-restore
+          DYLD_LIBRARY_PATH=/usr/local/lib bin/Release/net10.0/osx-arm64/publish/OpenCvSharp.Tests.NativeAot
 
       - uses: actions/upload-artifact@v7
         with:
@@ -358,6 +399,14 @@ jobs:
         with:
           name: macos-arm64-crash-reports
           path: ~/Library/Logs/DiagnosticReports/
+          if-no-files-found: ignore
+
+      - name: Upload crash dumps on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: macos-arm64-crash-dumps
+          path: test/OpenCvSharp.Tests/TestResults/
           if-no-files-found: ignore
 
   # ---------------------------------------------------------------------------
@@ -385,7 +434,7 @@ jobs:
           path: /tmp/dylib-arm64/
 
       - name: Install .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
 
