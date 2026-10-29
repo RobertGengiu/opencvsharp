@@ -20,12 +20,18 @@ The examples in this documentation use OpenCvSharp5. Replace `OpenCvSharp5` with
 | Linux x64 with GUI support | `OpenCvSharp5` and `OpenCvSharp5.official.runtime.linux-x64` |
 | Linux x64 without GUI support | `OpenCvSharp5` and `OpenCvSharp5.official.runtime.linux-x64.headless` |
 | Linux x64 with a reduced module set | `OpenCvSharp5` and `OpenCvSharp5.official.runtime.linux-x64.slim` |
-| Linux ARM64 | `OpenCvSharp5` and `OpenCvSharp5.runtime.linux-arm64` |
+| Linux ARM64 with GUI support | `OpenCvSharp5` and `OpenCvSharp5.official.runtime.linux-arm64` |
+| Linux ARM64 without GUI support | `OpenCvSharp5` and `OpenCvSharp5.official.runtime.linux-arm64.headless` |
+| Linux ARM64 with a reduced module set | `OpenCvSharp5` and `OpenCvSharp5.official.runtime.linux-arm64.slim` |
+| Linux ARM64 (Ubuntu-built) | `OpenCvSharp5` and `OpenCvSharp5.runtime.linux-arm64` |
 | macOS Intel | `OpenCvSharp5` and `OpenCvSharp5.runtime.osx.x64` |
 | macOS Apple Silicon | `OpenCvSharp5` and `OpenCvSharp5.runtime.osx.arm64` |
+| Android API 24+ (preview) | `OpenCvSharp5` and `OpenCvSharp5.runtime.android` |
 | WebAssembly | `OpenCvSharp5` and `OpenCvSharp5.runtime.wasm` |
 
 Use only one native runtime package for a given deployment target. The runtime package must match the operating system and process architecture.
+
+The Android package contains arm64-v8a and x86_64 native libraries and supports only the `core`, `imgproc`, and `imgcodecs` module profile. See [Android runtime support](android.md) for its scope and CI checks.
 
 ## Full, headless, and slim Linux packages
 
@@ -33,7 +39,7 @@ The full Linux x64 package contains the complete module set, including `highgui`
 
 The headless package contains the same module set as the full package except for `highgui`. It is the usual choice for services and containers that need features such as `videoio`, DNN, ML, or contrib modules but do not display native windows.
 
-The slim package has no GUI dependency and reduces the native module set. It omits contrib, DNN, `videoio`, and `highgui`, among other modules. Choose it only when the reduced feature set is sufficient.
+The slim package has no GUI dependency and reduces the native module set. It omits DNN, `videoio`, `highgui`, `stitching`, and most contrib bindings, but retains several useful contrib APIs. Check the [OpenCV module coverage matrix](module-coverage.md) before choosing it for a specific feature.
 
 ## Windows convenience packages
 

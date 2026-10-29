@@ -36,8 +36,11 @@ IF(APPLE)
 ENDIF()
 
 file(GLOB OPENCVSHARP_FILES *.cpp)
+if(OPENCVSHARP_MINIMAL)
+	set(OPENCVSHARP_FILES core.cpp imgproc.cpp imgcodecs.cpp std_string.cpp std_vector.cpp)
+endif()
 
-# Resolve Eigen3 and HDF5 targets before OpenCV config is loaded.
+# Resolve Eigen3, HDF5 and libavif targets before OpenCV config is loaded.
 # OpenCV's static cmake config references these targets but does not
 # call find_package for them, so they must be pre-defined.
 # Note: OpenCV's bundled protobuf (libprotobuf) is defined by OpenCV's own
@@ -45,6 +48,7 @@ file(GLOB OPENCVSHARP_FILES *.cpp)
 if(APPLE)
 	find_package(Eigen3 CONFIG REQUIRED)
 	find_package(HDF5 CONFIG REQUIRED)
+	find_package(libavif CONFIG REQUIRED)
 endif()
 
 # On Windows, OpenCV is built as a static library; tell the Windows Pack config to look for static libs.
@@ -65,7 +69,7 @@ find_package(OpenCV REQUIRED)
 
 # OpenCV's installed package exposes built modules as imported targets, but it
 # does not propagate the HAVE_OPENCV_* macros used by OpenCV's own build. Mirror
-# those two module-presence macros so the bindings stay disabled in slim/WASM
+# module-presence macros so the bindings stay disabled in slim/WASM
 # profiles where the corresponding targets are absent.
 if(TARGET opencv_structured_light)
 	add_compile_definitions(HAVE_OPENCV_STRUCTURED_LIGHT)
@@ -73,11 +77,45 @@ endif()
 if(TARGET opencv_surface_matching)
 	add_compile_definitions(HAVE_OPENCV_SURFACE_MATCHING)
 endif()
+if(TARGET opencv_intensity_transform)
+	add_compile_definitions(HAVE_OPENCV_INTENSITY_TRANSFORM)
+endif()
+if(TARGET opencv_fuzzy)
+	add_compile_definitions(HAVE_OPENCV_FUZZY)
+endif()
+if(TARGET opencv_bioinspired)
+	add_compile_definitions(HAVE_OPENCV_BIOINSPIRED)
+endif()
+if(TARGET opencv_ccalib)
+	add_compile_definitions(HAVE_OPENCV_CCALIB)
+endif()
+if(TARGET opencv_dnn_objdetect)
+	add_compile_definitions(HAVE_OPENCV_DNN_OBJDETECT)
+endif()
+if(TARGET opencv_dpm)
+	add_compile_definitions(HAVE_OPENCV_DPM)
+endif()
+if(TARGET opencv_rapid)
+	add_compile_definitions(HAVE_OPENCV_RAPID)
+endif()
+if(TARGET opencv_reg)
+	add_compile_definitions(HAVE_OPENCV_REG)
+endif()
+if(TARGET opencv_videostab)
+	add_compile_definitions(HAVE_OPENCV_VIDEOSTAB)
+endif()
+if(TARGET opencv_xfeatures2d)
+	add_compile_definitions(HAVE_OPENCV_XFEATURES2D)
+endif()
 
-# iconv support isn't automatic on some systems
-find_package(Iconv QUIET)
-if(NOT Iconv_FOUND)
-  add_compile_definitions(NO_ICONV=1)
+# iconv and Tesseract are not part of the minimal Android module profile.
+if(OPENCVSHARP_MINIMAL)
+	add_compile_definitions(NO_ICONV=1)
+else()
+	find_package(Iconv QUIET)
+	if(NOT Iconv_FOUND)
+		add_compile_definitions(NO_ICONV=1)
+	endif()
 endif()
 
 if(OpenCV_FOUND)
@@ -94,6 +132,12 @@ if(OpenCV_FOUND)
 	else()
 		add_library(OpenCvSharpExtern SHARED ${OPENCVSHARP_FILES})
 		target_link_libraries(OpenCvSharpExtern ${OpenCV_LIBRARIES})
+		if(ANDROID)
+			# NDK r27 needs explicit 16 KB ELF and RELRO alignment for 16 KB page devices.
+			target_link_options(OpenCvSharpExtern PRIVATE
+				-Wl,-z,max-page-size=16384
+				-Wl,-z,common-page-size=16384)
+		endif()
 
 		if(UNIX AND NOT APPLE)
 			# Drop NEEDED entries for libraries that are passed on the link line by some static
@@ -120,7 +164,7 @@ if(OpenCV_FOUND)
 	# Linux:   installed as a static library by packaging/docker/manylinux/build_static_deps.sh
 	#          into CMAKE_PREFIX_PATH (typically /opt/deps).
 	# macOS:   installed as a static library via vcpkg (CMAKE_PREFIX_PATH includes vcpkg_installed/).
-	if(NOT EMSCRIPTEN)
+	if(NOT EMSCRIPTEN AND NOT OPENCVSHARP_MINIMAL)
 		find_package(Tesseract QUIET)
 		if(Tesseract_FOUND)
 			if(WIN32)

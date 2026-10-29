@@ -15,3 +15,6 @@ jobs:
         with:
           days-before-stale: 30
           days-before-close: 5
+          # Keep triaged items open; omit "stale" so unlabeled items can still be closed.
+          exempt-issue-labels: "bug,dependencies,enhancement,needs investigation,out of scope,question,upstream: OpenCV"
+          exempt-pr-labels: "bug,dependencies,enhancement,needs investigation,out of scope,question,upstream: OpenCV"

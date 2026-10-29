@@ -34,6 +34,8 @@
 
 #include <opencv2/opencv.hpp>
 
+#ifndef OPENCVSHARP_MINIMAL
+
 // OpenCV 5 split calib3d into the calib / 3d / stereo modules, and opencv.hpp
 // now pulls the new headers (opencv2/3d.hpp, objdetect.hpp). The legacy
 // opencv2/calib3d.hpp still re-declares the same enums (LMEDS, SolvePnPMethod,
@@ -73,7 +75,9 @@
 // (core/imgproc/features/geometry) are all present in the slim profile and it
 // pulls no heavy external dependency, so it is kept available in every profile
 // (including slim). Not aggregated by opencv.hpp, so include it explicitly.
-// (SURF/nonfree lives in the separate opencv2/xfeatures2d/nonfree.hpp.)
+// OpenCvSharp exposes BRISK/KAZE/AKAZE/AGAST in slim; the other xfeatures2d
+// bindings remain full-profile only. (SURF/nonfree lives in the separate
+// opencv2/xfeatures2d/nonfree.hpp.)
 #include <opencv2/xfeatures2d.hpp>
 
 // A few lightweight contrib modules are kept available in every profile
@@ -88,6 +92,7 @@
 #include <opencv2/xphoto.hpp>
 #include <opencv2/bgsegm.hpp>
 #include <opencv2/img_hash.hpp>
+#endif // OPENCVSHARP_MINIMAL
 #ifndef NO_CONTRIB
 #include <opencv2/rgbd/linemod.hpp>
 #include <opencv2/rgbd/kinfu.hpp>

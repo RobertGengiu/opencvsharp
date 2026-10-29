@@ -7,7 +7,19 @@
     <ClCompile Include="bgsegm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="bioinspired.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dnn_objdetect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dpm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="calib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ccalib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="core.cpp">
@@ -40,10 +52,16 @@
     <ClCompile Include="imgproc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="intensity_transform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="line_descriptor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="flann.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fuzzy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ml.cpp">
@@ -59,6 +77,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="quality.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rapid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="reg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="videostab.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="shape.cpp">
@@ -138,6 +165,15 @@
     <ClInclude Include="bgsegm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="bioinspired.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dnn_objdetect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dpm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="aruco.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -205,6 +241,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="quality.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rapid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="reg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="videostab.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="xphoto.h">
@@ -327,6 +372,9 @@
     <ClInclude Include="calib.h">
       <Filter>Header Files\calib</Filter>
     </ClInclude>
+    <ClInclude Include="ccalib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="geometry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -378,6 +426,9 @@
     <ClInclude Include="flann.h">
       <Filter>Header Files\flann</Filter>
     </ClInclude>
+    <ClInclude Include="fuzzy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="std_vector_nesting.h">
       <Filter>Header Files\std_vector</Filter>
     </ClInclude>
@@ -406,6 +457,9 @@
       <Filter>Header Files\stitching</Filter>
     </ClInclude>
     <ClInclude Include="stitching_detail_Warpers.h">
+      <Filter>Header Files\stitching</Filter>
+    </ClInclude>
+    <ClInclude Include="stitching_detail_Utilities.h">
       <Filter>Header Files\stitching</Filter>
     </ClInclude>
     <ClInclude Include="photo_Tonemap.h">
@@ -501,6 +555,9 @@
     <ClInclude Include="signal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="intensity_transform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="xstereo_QuasiDenseStereo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -556,6 +613,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ptcloud_io.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ptcloud_Octree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ptcloud_rasterize.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="rgbd_colored_kinfu.h">

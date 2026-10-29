@@ -15,7 +15,7 @@ on:
 
 env:
   OPENCV_VERSION: "5.0.0"
-  OPENCV_ARM64_CACHE_REVISION: "2"
+  OPENCV_ARM64_CACHE_REVISION: "3"
   MEDIAMTX_VERSION: "1.19.3"
   MEDIAMTX_SHA256: "5d82148d1032a6a190d9909a2997d9989457aaadf49af87dd02cd4512d31bebe"
 
@@ -51,6 +51,7 @@ jobs:
           $baseline = (Get-Content vcpkg.json | ConvertFrom-Json).'builtin-baseline'
           git -C $env:VCPKG_INSTALLATION_ROOT fetch --depth=1 origin $baseline
           git -C $env:VCPKG_INSTALLATION_ROOT checkout $baseline
+          & "$env:VCPKG_INSTALLATION_ROOT/bootstrap-vcpkg.bat" -disableMetrics
 
       - name: Install vcpkg dependencies
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
@@ -187,11 +188,11 @@ jobs:
 
       - name: Test
         shell: cmd
-        # --blame-crash* collects a full memory dump and a Sequence_*.xml (listing tests executed,
-        # in order) into test\OpenCvSharp.Tests\TestResults\ if the test host crashes, so an
+        # The MTP crash dump extension collects a full memory dump and a test sequence file into
+        # test\OpenCvSharp.Tests\TestResults\ if the test host crashes, so an
         # intermittent native access violation can be attributed to a specific test without a
         # re-run. See "Upload crash dumps on failure" below.
-        run: dotnet test test\OpenCvSharp.Tests -c Release -f net10.0 --runtime win-x64 --blame-crash --blame-crash-dump-type full
+        run: dotnet test --project test\OpenCvSharp.Tests\OpenCvSharp.Tests.csproj -c Release -f net10.0 --runtime win-x64 --results-directory test\OpenCvSharp.Tests\TestResults --crashdump --crashdump-type Full
 
       - name: Test RTSP capture
         uses: ./.github/actions/test-rtsp-windows
@@ -211,7 +212,7 @@ jobs:
         shell: powershell
         run: |
           cd ${env:GITHUB_WORKSPACE}\test\OpenCvSharp.Tests.Windows
-          dotnet test -c Release -f net10.0-windows --runtime win-x64
+          dotnet test --project OpenCvSharp.Tests.Windows.csproj -c Release -f net10.0-windows --runtime win-x64
 
       - name: Test Avalonia extensions
         shell: powershell
@@ -221,7 +222,7 @@ jobs:
           # RID-specific bin\Release\net10.0\win-x64\ subfolder; copy into that exact folder.
           dotnet build -c Release -f net10.0 --runtime win-x64
           Copy-Item ${env:GITHUB_WORKSPACE}\test\OpenCvSharp.Tests\OpenCvSharpExtern.dll bin\Release\net10.0\win-x64\
-          dotnet test -c Release -f net10.0 --runtime win-x64 --no-build
+          dotnet test --project OpenCvSharp.Tests.Avalonia.csproj -c Release -f net10.0 --runtime win-x64 --no-build
 
       - name: Test NativeAOT publish
         shell: powershell
@@ -327,7 +328,7 @@ jobs:
   build-arm64:
     name: Windows (arm64)
 
-    runs-on: windows-11-arm
+    runs-on: windows-11-vs2026-arm
 
     steps:
       - name: Checkout
@@ -347,7 +348,7 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: ${{ github.workspace }}/vcpkg_installed
-          key: vcpkg-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}-arm64-windows-static
+          key: vcpkg-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}-arm64-windows-static-vs2026
 
       - name: Update vcpkg to match builtin-baseline
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
@@ -355,6 +356,7 @@ jobs:
           $baseline = (Get-Content vcpkg.json | ConvertFrom-Json).'builtin-baseline'
           git -C $env:VCPKG_INSTALLATION_ROOT fetch --depth=1 origin $baseline
           git -C $env:VCPKG_INSTALLATION_ROOT checkout $baseline
+          & "$env:VCPKG_INSTALLATION_ROOT/bootstrap-vcpkg.bat" -disableMetrics
 
       - name: Install vcpkg dependencies
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
@@ -365,7 +367,7 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: ${{ github.workspace }}/vcpkg_installed
-          key: vcpkg-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}-arm64-windows-static
+          key: vcpkg-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}-arm64-windows-static-vs2026
 
       - name: Restore OpenCV cache
         id: opencv-cache
@@ -388,10 +390,8 @@ jobs:
           # its built-in SGEMM, matching a clean local VS build. Windows builds the
           # image codecs via vcpkg, so no other ASM language is needed.
           # OpenCV 5's vendored MLAS uses GNU-syntax aarch64 .S SGEMM kernels that
-          # armasm64 (the only ASM compiler on the VS2022 ARM64 toolchain, which
-          # windows-11-arm ships instead of VS2026) cannot assemble, and
-          # CMAKE_ASM_COMPILER="" does not disable ASM under the VS ARM64 generator
-          # (it does under VS2026 x64). MLAS is an OpenCV 5 addition (absent in
+          # armasm64 cannot assemble. CMAKE_ASM_COMPILER="" does not disable ASM under the VS ARM64 generator
+          # (it does under VS x64). MLAS is an OpenCV 5 addition (absent in
           # OpenCV 4), so skip building it on this toolchain; DNN keeps working via
           # its built-in SGEMM (as OpenCV 4 ARM64 did). Drop the add_subdirectory
           # that pulls MLAS into opencv_dnn.
@@ -402,7 +402,7 @@ jobs:
             -C cmake/opencv_build_options.cmake `
             -S opencv `
             -B opencv/build `
-            -G "Visual Studio 17 2022" -A ARM64 `
+            -G "Visual Studio 18 2026" -A ARM64 `
             -D CMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" `
             -D VCPKG_TARGET_TRIPLET=arm64-windows-static `
             -D VCPKG_MANIFEST_INSTALL=OFF `
@@ -459,7 +459,7 @@ jobs:
           cmake `
             -S src `
             -B src/build_arm64 `
-            -G "Visual Studio 17 2022" -A ARM64 `
+            -G "Visual Studio 18 2026" -A ARM64 `
             -D CMAKE_PREFIX_PATH="$env:GITHUB_WORKSPACE/opencv_artifacts" `
             -D CMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" `
             -D VCPKG_TARGET_TRIPLET=arm64-windows-static `
@@ -477,7 +477,7 @@ jobs:
           cmake `
             -S src `
             -B src/build_arm64_slim `
-            -G "Visual Studio 17 2022" -A ARM64 `
+            -G "Visual Studio 18 2026" -A ARM64 `
             -D CMAKE_PREFIX_PATH="$env:GITHUB_WORKSPACE/opencv_artifacts" `
             -D CMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" `
             -D VCPKG_TARGET_TRIPLET=arm64-windows-static `
@@ -494,8 +494,8 @@ jobs:
 
       - name: Test
         shell: cmd
-        # See the x64 job's "Test" step above for why --blame-crash* is here.
-        run: dotnet test test\OpenCvSharp.Tests -c Release -f net10.0 --runtime win-arm64 --filter "FullyQualifiedName!=OpenCvSharp.Tests.Core.BuildConfigurationTest.FFMPEG_IsEnabled" --blame-crash --blame-crash-dump-type full
+        # See the x64 job's "Test" step above for why crash dump collection is enabled here.
+        run: dotnet test --project test\OpenCvSharp.Tests\OpenCvSharp.Tests.csproj -c Release -f net10.0 --runtime win-arm64 --filter-not-method OpenCvSharp.Tests.Core.BuildConfigurationTest.FFMPEG_IsEnabled --results-directory test\OpenCvSharp.Tests\TestResults --crashdump --crashdump-type Full
 
       - name: Upload crash dumps on failure
         if: failure()

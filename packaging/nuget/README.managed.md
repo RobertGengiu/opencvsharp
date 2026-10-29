@@ -14,6 +14,7 @@ See [OpenCV C++, Python (cv2), and OpenCvSharp](https://shimat.github.io/opencvs
 |---|---|
 | .NET 8.0 or later | `net8.0` (also AvaloniaExtensions, cross-platform) |
 | Windows desktop (.NET 8+) | `net8.0-windows` (WpfExtensions) |
+| Android API 24+ | `net10.0-android` (arm64-v8a or x86_64, preview runtime) |
 
 Target OpenCV version: **5.0.x** (with opencv_contrib)
 
@@ -30,6 +31,7 @@ dotnet add package OpenCvSharp5.Windows
 ```bash
 dotnet add package OpenCvSharp5
 dotnet add package OpenCvSharp5.official.runtime.linux-x64
+# ARM64 (AArch64): use OpenCvSharp5.official.runtime.linux-arm64 instead
 ```
 
 ### macOS
@@ -42,6 +44,17 @@ dotnet add package OpenCvSharp5.runtime.osx.x64
 dotnet add package OpenCvSharp5.runtime.osx.arm64
 ```
 
+### Android (preview)
+
+In a `net10.0-android` project, add both packages:
+
+```bash
+dotnet add package OpenCvSharp5
+dotnet add package OpenCvSharp5.runtime.android
+```
+
+The Android runtime contains only OpenCV `core`, `imgproc`, and `imgcodecs`. Camera capture, `VideoCapture`, native windows, DNN, and contrib modules are outside this profile.
+
 For more installation options, see [Installation on GitHub](https://github.com/shimat/opencvsharp#installation).
 
 ## Requirements
@@ -53,10 +66,10 @@ For more installation options, see [Installation on GitHub](https://github.com/s
   ```
 
 ### Linux (Ubuntu and other distributions)
-The official `OpenCvSharp5.official.runtime.linux-x64` package is built on manylinux_2_28 (glibc 2.28) and works on Ubuntu 20.04+, Debian 10+, RHEL/AlmaLinux 8+, and other Linux distributions.
+The official `OpenCvSharp5.official.runtime.linux-x64` package is built on manylinux_2_28 (glibc 2.28) and works on Ubuntu 20.04+, Debian 10+, RHEL/AlmaLinux 8+, and other Linux distributions. The `OpenCvSharp5.official.runtime.linux-arm64` packages are the ARM64 (AArch64) counterparts, with the same full/headless/slim variants described below.
 
 - **Full package**: uses GTK3 for `highgui` support (`Cv2.ImShow`, `Cv2.WaitKey`, etc.). GTK3 (`libgtk-3.so.0`) is pre-installed on standard Ubuntu/Debian/RHEL environments and typically requires no action. In minimal or container environments where GTK3 is absent, install it manually: Ubuntu/Debian: `apt-get install libgtk-3-0`; RHEL/AlmaLinux: `dnf install gtk3`. Alternatively, use the **headless** or **slim** package below, neither of which has GUI dependencies.
-- **Headless package** (`OpenCvSharp5.official.runtime.linux-x64.headless`): same module set as full (`videoio`, `dnn`, `ml`, `contrib`, `stitching`, `barcode`, ...) but `highgui` is disabled, so it has no GTK3/X11 dependency. Suitable for containerized services that need more than the slim module set (e.g. `VideoCapture`) but never call `highgui`.
+- **Headless package** (`OpenCvSharp5.official.runtime.linux-x64.headless`): same supported modules as full (`videoio`, `dnn`, `ml`, supported contrib bindings, `stitching`, `barcode`, ...) but `highgui` is disabled, so it has no GTK3/X11 dependency. Suitable for containerized services that need more than the slim module set (e.g. `VideoCapture`) but never call `highgui`.
 - **Slim package** (`OpenCvSharp5.official.runtime.linux-x64.slim`): `highgui` is disabled and the module set is reduced; no GTK3 or other GUI dependencies. Suitable for headless and container environments.
 
 ### macOS (Intel and Apple Silicon)
@@ -68,8 +81,10 @@ The `slim` runtime packages (`OpenCvSharp5.Windows.Slim`, `OpenCvSharp5.official
 
 | | Modules |
 |---|---|
-| **Enabled** | `core`, `imgproc`, `imgcodecs`, `calib3d`, `features2d`, `flann`, `objdetect`, `photo`, `ml`, `video`, `stitching`, `barcode` |
-| **Disabled** | `contrib`, `dnn`, `videoio`, `highgui` |
+| **Enabled** | `core`, `imgproc`, `imgcodecs`, `geometry`, `calib`, `stereo`, `ptcloud`, `features`, `flann`, `objdetect` (including ArUco, `barcode`, and selected `xobjdetect` APIs), `photo`, `ml`, `video`, `bgsegm`, `img_hash`, selected `ximgproc` and `xphoto` APIs, and BRISK/KAZE/AKAZE/AGAST from `xfeatures2d` |
+| **Disabled** | `dnn`, `videoio`, `highgui`, `stitching`, and most contrib bindings |
+
+See the [OpenCV module coverage matrix](https://shimat.github.io/opencvsharp/articles/getting-started/module-coverage.html) for full, headless, slim, and Android availability. A listed module does not imply complete API coverage.
 
 ## Usage
 

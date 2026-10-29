@@ -1,6 +1,6 @@
 # Installation
 
-This page creates a .NET console application and installs the packages selected in [Choose a Version and Package](package-selection.md). The commands require the [.NET 8 SDK or later](https://dotnet.microsoft.com/download).
+This page creates a .NET console application and installs the packages selected in [Choose a Version and Package](package-selection.md). Android requires a `net10.0-android` application instead of the console project below. The commands require the [.NET 8 SDK or later](https://dotnet.microsoft.com/download).
 
 ## Create a project
 
@@ -57,8 +57,10 @@ The official Linux x64 packages require glibc 2.28 or later.
 
 ```bash
 dotnet add package OpenCvSharp5
-dotnet add package OpenCvSharp5.runtime.linux-arm64
+dotnet add package OpenCvSharp5.official.runtime.linux-arm64
 ```
+
+The `.headless` and `.slim` variants (`OpenCvSharp5.official.runtime.linux-arm64.headless`, `OpenCvSharp5.official.runtime.linux-arm64.slim`) are available as on x64, and also require glibc 2.28 or later. `OpenCvSharp5.runtime.linux-arm64`, built on Ubuntu, remains available as well.
 
 ## macOS
 
@@ -75,6 +77,17 @@ For an Intel Mac:
 dotnet add package OpenCvSharp5
 dotnet add package OpenCvSharp5.runtime.osx.x64
 ```
+
+## Android (preview)
+
+In a `net10.0-android` application targeting Android API 24 or later:
+
+```bash
+dotnet add package OpenCvSharp5
+dotnet add package OpenCvSharp5.runtime.android
+```
+
+The runtime supports arm64-v8a and x86_64 and contains only `core`, `imgproc`, and `imgcodecs`. See [Android runtime support](android.md) before using other managed APIs.
 
 ## WebAssembly
 
