@@ -1,5 +1,8 @@
 name: Windows Server 2025
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:
@@ -14,7 +17,7 @@ on:
       - main
 
 env:
-  OPENCV_VERSION: "5.0.0"
+  OPENCV_VERSION: "5.1.0"
   OPENCV_ARM64_CACHE_REVISION: "3"
   MEDIAMTX_VERSION: "1.19.3"
   MEDIAMTX_SHA256: "5d82148d1032a6a190d9909a2997d9989457aaadf49af87dd02cd4512d31bebe"
@@ -69,7 +72,7 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: ${{ github.workspace }}/opencv_artifacts
-          key: opencv-${{ env.OPENCV_VERSION }}-windows-x64-${{ hashFiles('cmake/opencv_build_options.cmake') }}-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}
+          key: opencv-${{ env.OPENCV_VERSION }}-windows-x64-${{ hashFiles('cmake/opencv_build_options.cmake', 'cmake/opencv-hooks/POST_FINALIZE.cmake') }}-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}
 
       - name: Configure OpenCV
         if: steps.opencv-cache.outputs.cache-hit != 'true'
@@ -131,7 +134,7 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: ${{ github.workspace }}/opencv_artifacts
-          key: opencv-${{ env.OPENCV_VERSION }}-windows-x64-${{ hashFiles('cmake/opencv_build_options.cmake') }}-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}
+          key: opencv-${{ env.OPENCV_VERSION }}-windows-x64-${{ hashFiles('cmake/opencv_build_options.cmake', 'cmake/opencv-hooks/POST_FINALIZE.cmake') }}-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}
 
       # Commented out: FFmpeg backend is included in opencv_videoio_ffmpeg DLLs
       # If video tests fail, uncomment this step
@@ -153,13 +156,13 @@ jobs:
             -D VCPKG_TARGET_TRIPLET=x64-windows-static `
             -D VCPKG_MANIFEST_INSTALL=OFF `
             -D "VCPKG_INSTALLED_DIR=$env:GITHUB_WORKSPACE/vcpkg_installed" `
-            -D "VCPKG_OVERLAY_TRIPLETS=$env:GITHUB_WORKSPACE/cmake/triplets"
+            -D OPENCVSHARP_GENERATE_LINKER_MAP=ON
           cmake --build src/build --config Release -j 4
 
       - name: Verify FFmpeg plugin deployment
         shell: pwsh
         run: |
-          $ffmpegPlugin = "test\OpenCvSharp.Tests\opencv_videoio_ffmpeg500_64.dll"
+          $ffmpegPlugin = "test\OpenCvSharp.Tests\opencv_videoio_ffmpeg510_64.dll"
           if (-not (Test-Path $ffmpegPlugin)) {
             throw "OpenCV FFmpeg plugin was not deployed to the test project: $ffmpegPlugin"
           }
@@ -177,13 +180,13 @@ jobs:
             -D VCPKG_TARGET_TRIPLET=x64-windows-static `
             -D VCPKG_MANIFEST_INSTALL=OFF `
             -D "VCPKG_INSTALLED_DIR=$env:GITHUB_WORKSPACE/vcpkg_installed" `
-            -D "VCPKG_OVERLAY_TRIPLETS=$env:GITHUB_WORKSPACE/cmake/triplets" `
             -D NO_CONTRIB=ON `
             -D NO_VIDEOIO=ON `
             -D NO_HIGHGUI=ON `
             -D NO_DNN=ON `
             -D NO_STITCHING=ON `
-            -D NO_INSTALL_TO_TEST=ON
+            -D NO_INSTALL_TO_TEST=ON `
+            -D OPENCVSHARP_GENERATE_LINKER_MAP=ON
           cmake --build src/build_slim --config Release -j 4
 
       - name: Test
@@ -246,7 +249,7 @@ jobs:
           dotnet publish -c Release -f net10.0 --runtime win-x64 -p:PublishAot=true --no-restore
 
           # Only OpenCvSharpExtern.dll is needed: this smoke test never touches video/ffmpeg, and
-          # opencv_videoio_ffmpeg500_64.dll is only conditionally copied by CMake's POST_BUILD step
+          # opencv_videoio_ffmpeg510_64.dll is only conditionally copied by CMake's POST_BUILD step
           # in the first place (see OpenCvSharpExtern/CMakeLists.txt's `if(EXISTS ...)` guard), so
           # it is not guaranteed to exist here.
           $publishDir = "bin\Release\net10.0\win-x64\publish"
@@ -298,7 +301,7 @@ jobs:
           $ErrorActionPreference = "Stop"
           $PSNativeCommandUseErrorActionPreference = $true
 
-          $date = Get-Date -Format "yyyyMMdd"
+          $date = (Get-Date).ToUniversalTime().ToString("yyyyMMdd")
           $version = "${env:OPENCV_VERSION}.${date}-beta"
           Write-Host "version = ${version}"
 
@@ -319,7 +322,20 @@ jobs:
           dotnet pack packaging/nuget/OpenCvSharp5.Windows.csproj -o artifacts -p:Version=$version -p:PackageVersion=$version
           dotnet pack packaging/nuget/OpenCvSharp5.Windows.Slim.csproj -o artifacts -p:Version=$version -p:PackageVersion=$version
 
-      - name: Upload NuGet packages
+      - name: Collect Windows x64 linker maps
+        shell: pwsh
+        run: |
+          $builds = [ordered]@{ full = 'src/build'; slim = 'src/build_slim' }
+          $checksums = foreach ($profile in $builds.Keys) {
+            $nativeDir = "$($builds[$profile])/OpenCvSharpExtern"
+            Copy-Item "$nativeDir/OpenCvSharpExtern.map" "artifacts/OpenCvSharpExtern-win-x64-$profile.map"
+            $hash = (Get-FileHash "$nativeDir/Release/OpenCvSharpExtern.dll").Hash.ToLowerInvariant()
+            "$hash  $profile/OpenCvSharpExtern.dll"
+          }
+          $checksums | Set-Content artifacts/windows-x64-dll-sha256.txt
+
+      # The maps and packages are uploaded together so a release always gets them from the same run.
+      - name: Upload NuGet packages and linker maps
         uses: actions/upload-artifact@v7
         with:
           name: packages_windows
@@ -374,7 +390,7 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: ${{ github.workspace }}/opencv_artifacts
-          key: opencv-${{ env.OPENCV_VERSION }}-windows-arm64-v${{ env.OPENCV_ARM64_CACHE_REVISION }}-${{ hashFiles('cmake/opencv_build_options.cmake') }}-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}
+          key: opencv-${{ env.OPENCV_VERSION }}-windows-arm64-v${{ env.OPENCV_ARM64_CACHE_REVISION }}-${{ hashFiles('cmake/opencv_build_options.cmake', 'cmake/opencv-hooks/POST_FINALIZE.cmake') }}-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}
 
       - name: Configure OpenCV
         if: steps.opencv-cache.outputs.cache-hit != 'true'
@@ -450,7 +466,7 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: ${{ github.workspace }}/opencv_artifacts
-          key: opencv-${{ env.OPENCV_VERSION }}-windows-arm64-v${{ env.OPENCV_ARM64_CACHE_REVISION }}-${{ hashFiles('cmake/opencv_build_options.cmake') }}-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}
+          key: opencv-${{ env.OPENCV_VERSION }}-windows-arm64-v${{ env.OPENCV_ARM64_CACHE_REVISION }}-${{ hashFiles('cmake/opencv_build_options.cmake', 'cmake/opencv-hooks/POST_FINALIZE.cmake') }}-${{ hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}
 
       - name: Build OpenCvSharpExtern (full)
         shell: powershell
@@ -465,7 +481,6 @@ jobs:
             -D VCPKG_TARGET_TRIPLET=arm64-windows-static `
             -D VCPKG_MANIFEST_INSTALL=OFF `
             -D "VCPKG_INSTALLED_DIR=$env:GITHUB_WORKSPACE/vcpkg_installed" `
-            -D "VCPKG_OVERLAY_TRIPLETS=$env:GITHUB_WORKSPACE/cmake/triplets" `
             -D OPENCVSHARP_BUILD_WITH_DEBUG_INFO=ON
           cmake --build src/build_arm64 --config Release -j 4
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -483,7 +498,6 @@ jobs:
             -D VCPKG_TARGET_TRIPLET=arm64-windows-static `
             -D VCPKG_MANIFEST_INSTALL=OFF `
             -D "VCPKG_INSTALLED_DIR=$env:GITHUB_WORKSPACE/vcpkg_installed" `
-            -D "VCPKG_OVERLAY_TRIPLETS=$env:GITHUB_WORKSPACE/cmake/triplets" `
             -D NO_CONTRIB=ON `
             -D NO_VIDEOIO=ON `
             -D NO_HIGHGUI=ON `
@@ -514,7 +528,7 @@ jobs:
           $ErrorActionPreference = "Stop"
           $PSNativeCommandUseErrorActionPreference = $true
 
-          $date = Get-Date -Format "yyyyMMdd"
+          $date = (Get-Date).ToUniversalTime().ToString("yyyyMMdd")
           $version = "${env:OPENCV_VERSION}.${date}-beta"
           Write-Host "version = ${version}"
 

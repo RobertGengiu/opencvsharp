@@ -104,9 +104,6 @@ endif()
 if(TARGET opencv_videostab)
 	add_compile_definitions(HAVE_OPENCV_VIDEOSTAB)
 endif()
-if(TARGET opencv_xfeatures2d)
-	add_compile_definitions(HAVE_OPENCV_XFEATURES2D)
-endif()
 
 # iconv and Tesseract are not part of the minimal Android module profile.
 if(OPENCVSHARP_MINIMAL)
@@ -131,7 +128,16 @@ if(OpenCV_FOUND)
 		add_library(OpenCvSharpExtern STATIC ${OPENCVSHARP_FILES} ${WASM_LIB})
 	else()
 		add_library(OpenCvSharpExtern SHARED ${OPENCVSHARP_FILES})
+		if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET libharfbuzz)
+			# OpenCV's rasterizer uses its bundled HarfBuzz. Resolve those symbols before
+			# GTK can supply system HarfBuzz, and keep the bundled symbols private to this library.
+			target_link_libraries(OpenCvSharpExtern "-Wl,--whole-archive" libharfbuzz "-Wl,--no-whole-archive")
+			target_link_options(OpenCvSharpExtern PRIVATE "-Wl,--exclude-libs,$<TARGET_FILE_NAME:libharfbuzz>")
+		endif()
 		target_link_libraries(OpenCvSharpExtern ${OpenCV_LIBRARIES})
+		if(MSVC AND OPENCVSHARP_GENERATE_LINKER_MAP)
+			target_link_options(OpenCvSharpExtern PRIVATE "/MAP:${CMAKE_CURRENT_BINARY_DIR}/OpenCvSharpExtern.map")
+		endif()
 		if(ANDROID)
 			# NDK r27 needs explicit 16 KB ELF and RELRO alignment for 16 KB page devices.
 			target_link_options(OpenCvSharpExtern PRIVATE

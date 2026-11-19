@@ -1,17 +1,21 @@
 name: Docker Test
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     types: [synchronize, opened]
     paths:
       - '.dockerignore'
+      - '.editorconfig'
       - '.github/workflows/docker-test-ubuntu.yml'
       - 'cmake/**'
       - 'global.json'
       - 'opencv'
       - 'opencv_contrib'
-      - 'packaging/docker/ubuntu24-dotnet10-opencv5.0.0/**'
-      - 'packaging/docker/ubuntu24-dotnet10-opencv5.0.0-slim/**'
+      - 'packaging/docker/ubuntu24-dotnet10-opencv5.1.0/**'
+      - 'packaging/docker/ubuntu24-dotnet10-opencv5.1.0-slim/**'
       - 'src/**'
       - 'test/**'
       - 'vcpkg.json'
@@ -25,9 +29,9 @@ concurrency:
 
 env:
   DEBIAN_FRONTEND: noninteractive
-  OPENCV_VERSION: 5.0.0
-  DOCKER_BUILD_CONTEXT_FULL: ./packaging/docker/ubuntu24-dotnet10-opencv5.0.0
-  DOCKER_BUILD_CONTEXT_SLIM: ./packaging/docker/ubuntu24-dotnet10-opencv5.0.0-slim
+  OPENCV_VERSION: 5.1.0
+  DOCKER_BUILD_CONTEXT_FULL: ./packaging/docker/ubuntu24-dotnet10-opencv5.1.0
+  DOCKER_BUILD_CONTEXT_SLIM: ./packaging/docker/ubuntu24-dotnet10-opencv5.1.0-slim
 
 jobs:
   build_full:
@@ -75,7 +79,7 @@ jobs:
           file: ${{ env.DOCKER_BUILD_CONTEXT_FULL }}/Dockerfile
           build-args: |
             OPENCV_VERSION=${{ env.OPENCV_VERSION }}
-          outputs: type=docker,name=shimat/ubuntu24-dotnet10-opencv5.0.0:latest
+          outputs: type=docker,name=shimat/ubuntu24-dotnet10-opencv5.1.0:latest
           cache-from: type=gha,scope=full-main
           cache-to: ${{ github.ref == 'refs/heads/main' && 'type=gha,mode=min,scope=full-main' || '' }}
 
@@ -110,6 +114,6 @@ jobs:
           file: ${{ env.DOCKER_BUILD_CONTEXT_SLIM }}/Dockerfile
           build-args: |
             OPENCV_VERSION=${{ env.OPENCV_VERSION }}
-          outputs: type=docker,name=shimat/ubuntu24-dotnet10-opencv5.0.0-slim:latest
+          outputs: type=docker,name=shimat/ubuntu24-dotnet10-opencv5.1.0-slim:latest
           cache-from: type=gha,scope=slim-main
           cache-to: ${{ github.ref == 'refs/heads/main' && 'type=gha,mode=min,scope=slim-main' || '' }}

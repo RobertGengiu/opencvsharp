@@ -8,9 +8,11 @@ src/build*/
 # cmake option files needed by Dockerfiles
 !cmake/opencv_build_options.cmake
 !cmake/opencv_build_options_slim.cmake
+!cmake/opencv-hooks/
 
 # Test projects
 !test/
 
-# Test runner configuration
+# Managed build and test configuration
+!.editorconfig
 !global.json

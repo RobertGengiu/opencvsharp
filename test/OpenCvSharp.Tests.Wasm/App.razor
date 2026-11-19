@@ -4,12 +4,14 @@
    DllNotFoundException here; an OpenCL/UMat probe crash (#2037) either throws or hangs this
    component forever, which the runner's timeout also catches. An ImEncode/ImDecode round trip
    for JPEG/PNG/TIFF guards against the codecs building but silently no-op'ing - or hanging - on
-   wasm (#2043). libjpeg-turbo/libpng/libtiff use setjmp/longjmp for error handling, which hung
-   (rather than threw) when OpenCvSharpExtern.a was built with a different Emscripten version than
-   the one the .NET wasm SDK links it with; see EM_VERSION in .github/workflows/wasm.yml. A
+   wasm (#2043). libjpeg-turbo/libpng/libtiff use setjmp/longjmp for error handling. An archive
+   built with the wrong Emscripten version can fail when these codecs run. A
    Cv2.Dnn.BlobFromImage call exercises the dnn module's native wrapper without needing a trained
    model file on disk, guarding against the OpenCV build config showing dnn as built while the
    wasm wrapper actually fails to link or crashes at runtime. *@
+
+@using OpenCvSharp.Rapid
+@using OpenCvSharp.XFeatures2D
 
 <pre id="result" data-status="@status">@status: @detail</pre>
 
@@ -23,6 +25,9 @@
         {
             var version = Cv2.GetVersionString();
 
+            if (Cv2.Ocl.HaveOpenCL() || Cv2.Ocl.GetPlatformsInfo().Count != 0)
+                throw new InvalidOperationException("The Wasm build should expose no OpenCL platforms");
+
             using var mat = new Mat(256, 256, MatType.CV_8UC1, Scalar.All(0));
             Cv2.Rectangle(mat, new Rect(40, 40, 120, 120), Scalar.All(255), thickness: -1);
             Cv2.Circle(mat, new Point(180, 180), 30, Scalar.All(200), thickness: -1);
@@ -31,6 +36,14 @@
             using var orb = ORB.Create(500);
             using var descriptors = new Mat();
             orb.DetectAndCompute(mat, default, out var keypoints, descriptors);
+
+            using var akaze = AKAZE.Create();
+            using var akazeDescriptors = new Mat();
+            akaze.DetectAndCompute(mat, default, out var akazeKeypoints, akazeDescriptors);
+            using var keypointImage = new Mat();
+            Cv2.DrawKeypoints(mat, akazeKeypoints, keypointImage, Scalar.Yellow, DrawMatchesFlags.DrawRichKeypoints);
+            if (akazeDescriptors.Empty() || keypointImage.Empty())
+                throw new InvalidOperationException("AKAZE did not produce descriptors and a keypoint image");
 
             foreach (var ext in new[] { ".jpg", ".png", ".tiff" })
             {
@@ -50,10 +63,26 @@
             if (blob.Empty())
                 throw new InvalidOperationException("Cv2.Dnn.BlobFromImage produced an empty blob");
 
+            // RAPID is disabled in the Wasm archive. Verify that its entry point accepts
+            // the by-value Scalar and reports an unavailable module through OpenCVException.
+            try
+            {
+                using var points = Mat.FromPixelData(3, 1, MatType.CV_32FC2,
+                    new[] { new Point2f(10, 10), new Point2f(20, 10), new Point2f(10, 20) });
+                using var triangles = Mat.FromPixelData(1, 1, MatType.CV_32SC3, new[] { new Vec3i(0, 1, 2) });
+                CvRapid.DrawWireframe(mat, points, triangles, Scalar.All(0));
+                throw new InvalidOperationException("RAPID unexpectedly ran in the Wasm build");
+            }
+            catch (OpenCVException ex) when (ex.Status == ErrorCode.StsNotImplemented &&
+                                             ex.FuncName == "rapid_drawWireframe")
+            {
+                // Expected for this Wasm profile.
+            }
+
             var blobShape = string.Join('x', Enumerable.Range(0, blob.Dims).Select(blob.Size));
 
             status = "ok";
-            detail = $"OpenCV {version}, ORB keypoints: {keypoints.Length}, dnn blob shape: {blobShape}";
+            detail = $"OpenCV {version}, ORB keypoints: {keypoints.Length}, AKAZE keypoints: {akazeKeypoints.Length}, JPEG/PNG/TIFF round trips and DNN blob shape: {blobShape}";
         }
         catch (Exception ex)
         {
